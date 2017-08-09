@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace BS.Output.Bugzilla
+﻿namespace BS.Output.Bugzilla
 {
 
   public class Output: IOutput 
@@ -12,9 +10,15 @@ namespace BS.Output.Bugzilla
     string password;
     string fileName;
     string fileFormat;
-    bool openIssueInBrowser;
-    string lastProjectID;
-    string lastIssueID;
+    bool openItemInBrowser;
+    string lastProduct;
+    string lastComponent;
+    string lastVersion;
+    string lastOPSys;
+    string lastPlatform;
+    string lastPriority;
+    string lastSeverity;
+    int lastBugID;
 
     public Output(string name, 
                   string url, 
@@ -22,9 +26,15 @@ namespace BS.Output.Bugzilla
                   string password, 
                   string fileName, 
                   string fileFormat,
-                  bool openIssueInBrowser, 
-                  string lastProjectID, 
-                  string lastIssueID)
+                  bool openItemInBrowser,
+                  string lastProduct,
+                  string lastComponent,
+                  string lastVersion,
+                  string lastOPSys,
+                  string lastPlatform,
+                  string lastPriority,
+                  string lastSeverity,
+                  int lastBugID)
     {
       this.name = name;
       this.url = url;
@@ -32,9 +42,14 @@ namespace BS.Output.Bugzilla
       this.password = password;
       this.fileName = fileName;
       this.fileFormat = fileFormat;
-      this.openIssueInBrowser = openIssueInBrowser;
-      this.lastProjectID = lastProjectID;
-      this.lastIssueID = lastIssueID;
+      this.openItemInBrowser = openItemInBrowser;
+      this.lastComponent = lastComponent;
+      this.lastVersion = lastVersion;
+      this.lastOPSys = lastOPSys;
+      this.lastPlatform = lastPlatform;
+      this.lastPriority = lastPriority;
+      this.lastSeverity = lastSeverity;
+      this.lastBugID = lastBugID;
     }
     
     public string Name
@@ -72,19 +87,49 @@ namespace BS.Output.Bugzilla
       get { return fileFormat; }
     }
 
-    public bool OpenIssueInBrowser
+    public bool OpenItemInBrowser
     {
-      get { return openIssueInBrowser; }
+      get { return openItemInBrowser; }
     }
     
-    public string LastProjectID
+    public string LastProduct
     {
-      get { return lastProjectID; }
+      get { return lastProduct; }
     }
 
-    public string LastIssueID
+    public string LastComponent
     {
-      get { return lastIssueID; }
+      get { return lastComponent; }
+    }
+
+    public string LastVersion
+    {
+      get { return lastVersion; }
+    }
+
+    public string LastOPSys
+    {
+      get { return lastOPSys; }
+    }
+
+    public string LastPlatform
+    {
+      get { return lastPlatform; }
+    }
+
+    public string LastPriority
+    {
+      get { return lastPriority; }
+    }
+
+    public string LastSeverity
+    {
+      get { return lastSeverity; }
+    }
+
+    public int LastBugID
+    {
+      get { return LastBugID; }
     }
 
   }

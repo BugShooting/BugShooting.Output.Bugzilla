@@ -44,7 +44,7 @@ namespace BS.Output.Bugzilla
         FileFormatComboBox.SelectedValue = fileFormats.First();
       }
             
-      OpenItemInBrowserCheckBox.IsChecked = output.OpenIssueInBrowser;
+      OpenItemInBrowserCheckBox.IsChecked = output.OpenItemInBrowser;
 
       NameTextBox.TextChanged += ValidateData;
       UrlTextBox.TextChanged += ValidateData;

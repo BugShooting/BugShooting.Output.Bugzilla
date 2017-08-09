@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.ServiceModel;
-using System.Web;
 using System.Threading.Tasks;
 
 namespace BS.Output.Bugzilla
@@ -46,7 +44,13 @@ namespace BS.Output.Bugzilla
                                  String.Empty, 
                                  true,
                                  String.Empty,
-                                 "1");
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 1);
 
       return EditOutput(Owner, output);
 
@@ -69,8 +73,14 @@ namespace BS.Output.Bugzilla
                           edit.FileName,
                           edit.FileFormat,
                           edit.OpenItemInBrowser,
-                          Output.LastProjectID,
-                          Output.LastIssueID);
+                          Output.LastProduct,
+                          Output.LastComponent,
+                          Output.LastVersion,
+                          Output.LastOPSys,
+                          Output.LastPlatform,
+                          Output.LastPriority,
+                          Output.LastSeverity,
+                          Output.LastBugID);
       }
       else
       {
@@ -88,11 +98,17 @@ namespace BS.Output.Bugzilla
       outputValues.Add(new OutputValue("Url", Output.Url));
       outputValues.Add(new OutputValue("UserName", Output.UserName));
       outputValues.Add(new OutputValue("Password",Output.Password, true));
-      outputValues.Add(new OutputValue("OpenIssueInBrowser", Convert.ToString(Output.OpenIssueInBrowser)));
+      outputValues.Add(new OutputValue("OpenItemInBrowser", Convert.ToString(Output.OpenItemInBrowser)));
       outputValues.Add(new OutputValue("FileName", Output.FileName));
       outputValues.Add(new OutputValue("FileFormat", Output.FileFormat));
-      outputValues.Add(new OutputValue("LastProjectID", Output.LastProjectID));
-      outputValues.Add(new OutputValue("LastIssueID", Convert.ToString(Output.LastIssueID)));
+      outputValues.Add(new OutputValue("LastProduct", Output.LastProduct));
+      outputValues.Add(new OutputValue("LastComponent", Output.LastComponent));
+      outputValues.Add(new OutputValue("LastVersion", Output.LastVersion));
+      outputValues.Add(new OutputValue("LastOPSys", Output.LastOPSys));
+      outputValues.Add(new OutputValue("LastPlatform", Output.LastPlatform));
+      outputValues.Add(new OutputValue("LastPriority", Output.LastPriority));
+      outputValues.Add(new OutputValue("LastSeverity", Output.LastSeverity));
+      outputValues.Add(new OutputValue("LastBugID", Convert.ToString(Output.LastBugID)));
 
       return outputValues;
       
@@ -107,9 +123,15 @@ namespace BS.Output.Bugzilla
                         OutputValues["Password", ""].Value, 
                         OutputValues["FileName", "Screenshot"].Value, 
                         OutputValues["FileFormat", ""].Value,
-                        Convert.ToBoolean(OutputValues["OpenIssueInBrowser", Convert.ToString(true)].Value),
-                        OutputValues["LastProjectID", string.Empty].Value, 
-                        OutputValues["LastIssueID", "1"].Value);
+                        Convert.ToBoolean(OutputValues["OpenItemInBrowser", Convert.ToString(true)].Value),
+                        OutputValues["LastProduct", string.Empty].Value,
+                        OutputValues["LastComponent", string.Empty].Value,
+                        OutputValues["LastVersion", string.Empty].Value,
+                        OutputValues["LastOPSys", string.Empty].Value,
+                        OutputValues["LastPlatform", string.Empty].Value,
+                        OutputValues["LastPriority", string.Empty].Value,
+                        OutputValues["LastSeverity", string.Empty].Value,
+                        Convert.ToInt32(OutputValues["LastBugID", "1"].Value));
 
     }
 
