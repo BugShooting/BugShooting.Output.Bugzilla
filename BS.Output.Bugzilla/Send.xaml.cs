@@ -10,6 +10,8 @@ namespace BS.Output.Bugzilla
   partial class Send : Window
   {
 
+    Dictionary<string, ProductDetails> productDetails;
+
     public Send(string url, 
                 string lastProduct, 
                 string lastComponent,
@@ -20,12 +22,14 @@ namespace BS.Output.Bugzilla
                 string lastSeverity,
                 int lastBugID,
                 List<Item> products,
-                Dictionary<string, ProductDetails> objProductDetails,
+                Dictionary<string, ProductDetails> productDetails,
                 string userName, 
                 string password, 
                 string fileName)
     {
       InitializeComponent();
+
+      this.productDetails = productDetails;
 
       ProductComboBox.ItemsSource = products;
 
@@ -121,32 +125,6 @@ namespace BS.Output.Bugzilla
       get { return FileNameTextBox.Text; }
     }
 
-    //private void InitProjects(List<ProjectItem> projectItems, ProjectData[] projects, string parentProjectName)
-    //{
-      //string fullName = null;
-
-      //foreach (ProjectData project in projects)
-      //{
-      //  if (parentProjectName == string.Empty)
-      //  {
-      //    fullName = project.name;
-      //  }
-      //  else
-      //  {
-      //    fullName = parentProjectName + " - " + project.name;
-      //  }
-
-      //  projectItems.Add(new ProjectItem(project.id, fullName));
-
-      //  if ((project.subprojects != null))
-      //  {
-      //    InitProjects(projectItems, project.subprojects, fullName);
-      //  }
-
-      //}
-
-    //}
-
     private void NewBug_CheckedChanged(object sender, EventArgs e)
     {
 
@@ -175,7 +153,30 @@ namespace BS.Output.Bugzilla
     {
       e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
     }
-    
+
+    private void ProductComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+
+      if (ProductComboBox.SelectedValue is null)
+      {
+        ComponentComboBox.ItemsSource = null;
+        VersionComboBox.ItemsSource = null;
+        OperatingSystemComboBox.ItemsSource = null;
+        PlatformComboBox.ItemsSource = null;
+        PriorityComboBox.ItemsSource = null;
+        SeverityComboBox.ItemsSource = null;
+      }
+      else
+      {
+        ComponentComboBox.ItemsSource = productDetails[Product].Components;
+        VersionComboBox.ItemsSource = productDetails[Product].Versions;
+        OperatingSystemComboBox.ItemsSource = productDetails[Product].OperatingSystems;
+        PlatformComboBox.ItemsSource = productDetails[Product].Platforms;
+        PriorityComboBox.ItemsSource = productDetails[Product].Priority;
+        SeverityComboBox.ItemsSource = productDetails[Product].Severity;
+      }
+    }
+
     private void ValidateData(object sender, EventArgs e)
     {
       OK.IsEnabled = ((CreateNewBug && Validation.IsValid(ProductComboBox) &&

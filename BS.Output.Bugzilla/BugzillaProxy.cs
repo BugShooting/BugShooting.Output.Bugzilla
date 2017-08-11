@@ -79,14 +79,14 @@ namespace BS.Output.Bugzilla
                                                                string product, 
                                                                string component, 
                                                                string version, 
-                                                               string opSys, 
+                                                               string operatingSystem, 
                                                                string platform, 
                                                                string priority, 
                                                                string severity,
                                                                string summary, 
                                                                string description)
     {
-      return await Task.Factory.StartNew(() => BugCreate(apiUrl, loginCookies, product, component, version, opSys, platform, priority, severity, summary, description));
+      return await Task.Factory.StartNew(() => BugCreate(apiUrl, loginCookies, product, component, version, operatingSystem, platform, priority, severity, summary, description));
     }
 
     static private BugCreateResult BugCreate(string apiUrl,
@@ -94,7 +94,7 @@ namespace BS.Output.Bugzilla
                                              string product,
                                              string component,
                                              string version,
-                                             string opSys,
+                                             string operatingSystem,
                                              string platform,
                                              string priority,
                                              string severity,
@@ -160,7 +160,7 @@ namespace BS.Output.Bugzilla
       node.InnerText = "op_sys";
       node = memberNode.AppendChild(doc.CreateElement("value"));
       node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = opSys;
+      node.InnerText = operatingSystem;
 
       memberNode = structNode.AppendChild(doc.CreateElement("member"));
       node = memberNode.AppendChild(doc.CreateElement("name"));
@@ -676,7 +676,7 @@ namespace BS.Output.Bugzilla
       get { return items["version"]; }
     }
 
-    public List<Item> OPSys
+    public List<Item> OperatingSystems
     {
       get { return items["op_sys"]; }
     }
