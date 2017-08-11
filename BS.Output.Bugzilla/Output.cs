@@ -14,7 +14,7 @@
     string lastProduct;
     string lastComponent;
     string lastVersion;
-    string lastOPSys;
+    string lastOperatingSystem;
     string lastPlatform;
     string lastPriority;
     string lastSeverity;
@@ -30,7 +30,7 @@
                   string lastProduct,
                   string lastComponent,
                   string lastVersion,
-                  string lastOPSys,
+                  string lastOperatingSystem,
                   string lastPlatform,
                   string lastPriority,
                   string lastSeverity,
@@ -43,9 +43,10 @@
       this.fileName = fileName;
       this.fileFormat = fileFormat;
       this.openItemInBrowser = openItemInBrowser;
+      this.lastProduct = lastProduct;
       this.lastComponent = lastComponent;
       this.lastVersion = lastVersion;
-      this.lastOPSys = lastOPSys;
+      this.lastOperatingSystem = lastOperatingSystem;
       this.lastPlatform = lastPlatform;
       this.lastPriority = lastPriority;
       this.lastSeverity = lastSeverity;
@@ -107,9 +108,9 @@
       get { return lastVersion; }
     }
 
-    public string LastOPSys
+    public string LastOperatingSystem
     {
-      get { return lastOPSys; }
+      get { return lastOperatingSystem; }
     }
 
     public string LastPlatform

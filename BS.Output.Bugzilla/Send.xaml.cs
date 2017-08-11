@@ -9,40 +9,93 @@ namespace BS.Output.Bugzilla
 {
   partial class Send : Window
   {
- 
-    //public Send(string url, string lastProjectID, string lastIssueID, ProjectData[] projects, string userName, string password, string fileName)
-    //{
-    //  InitializeComponent();
-      
-    //  List<ProjectItem> projectItems = new List<ProjectItem>();
-    //  InitProjects(projectItems, projects, String.Empty);
-    //  ProjectComboBox.ItemsSource = projectItems;
 
-    //  Url.Text = url;
-    //  NewIssue.IsChecked = true;
-    //  ProjectComboBox.SelectedValue = lastProjectID;
-    //  IssueIDTextBox.Text = lastIssueID;
-    //  FileNameTextBox.Text = fileName;
-
-    //  ProjectComboBox.SelectionChanged += ValidateData;
-    //  SummaryTextBox.TextChanged += ValidateData;
-    //  DescriptionTextBox.TextChanged += ValidateData;
-    //  IssueIDTextBox.TextChanged += ValidateData;
-    //  FileNameTextBox.TextChanged += ValidateData;
-    //  ValidateData(null, null);
-
-    //}
-
-    public bool CreateNewIssue
+    public Send(string url, 
+                string lastProduct, 
+                string lastComponent,
+                string lastVersion,
+                string lastOperatingSystem,
+                string lastPlatform,
+                string lastPriority,
+                string lastSeverity,
+                int lastBugID,
+                List<Item> products,
+                Dictionary<string, ProductDetails> objProductDetails,
+                string userName, 
+                string password, 
+                string fileName)
     {
-      get { return NewIssue.IsChecked.Value; }
+      InitializeComponent();
+
+      ProductComboBox.ItemsSource = products;
+
+      Url.Text = url;
+      NewBug.IsChecked = true;
+      ProductComboBox.SelectedValue = lastProduct;
+      ComponentComboBox.SelectedValue = lastComponent;
+      VersionComboBox.SelectedValue = lastVersion;
+      OperatingSystemComboBox.SelectedValue = lastOperatingSystem;
+      PlatformComboBox.SelectedValue = lastPlatform;
+      PriorityComboBox.SelectedValue = lastPriority;
+      SeverityComboBox.SelectedValue = lastSeverity;
+      BugIDTextBox.Text = lastBugID.ToString();
+      FileNameTextBox.Text = fileName;
+
+      ProductComboBox.SelectionChanged += ValidateData;
+      ComponentComboBox.SelectionChanged += ValidateData;
+      VersionComboBox.SelectionChanged += ValidateData;
+      OperatingSystemComboBox.SelectionChanged += ValidateData;
+      PlatformComboBox.SelectionChanged += ValidateData;
+      PriorityComboBox.SelectionChanged += ValidateData;
+      SeverityComboBox.SelectionChanged += ValidateData;
+      SummaryTextBox.TextChanged += ValidateData;
+      DescriptionTextBox.TextChanged += ValidateData;
+      BugIDTextBox.TextChanged += ValidateData;
+      FileNameTextBox.TextChanged += ValidateData;
+      ValidateData(null, null);
+
+    }
+
+    public bool CreateNewBug
+    {
+      get { return NewBug.IsChecked.Value; }
     }
  
-    public string ProjectID
+    public string Product
     {
-      get { return (string)ProjectComboBox.SelectedValue; }
+      get { return (string)ProductComboBox.SelectedValue; }
     }
-      
+
+    public string Component
+    {
+      get { return (string)ComponentComboBox.SelectedValue; }
+    }
+
+    public string Version
+    {
+      get { return (string)VersionComboBox.SelectedValue; }
+    }
+
+    public string OperatingSystem
+    {
+      get { return (string)OperatingSystemComboBox.SelectedValue; }
+    }
+
+    public string Platform
+    {
+      get { return (string)PlatformComboBox.SelectedValue; }
+    }
+
+    public string Priority
+    {
+      get { return (string)PriorityComboBox.SelectedValue; }
+    }
+
+    public string Severity
+    {
+      get { return (string)SeverityComboBox.SelectedValue; }
+    }
+
     public string Summary
     {
       get { return SummaryTextBox.Text; }
@@ -53,9 +106,14 @@ namespace BS.Output.Bugzilla
       get { return DescriptionTextBox.Text; }
     }
 
-    public string IssueID
+    public int BugID
     {
-      get { return IssueIDTextBox.Text; }
+      get { return Convert.ToInt32(BugIDTextBox.Text); }
+    }
+
+    public string Comment
+    {
+      get { return CommentTextBox.Text; }
     }
 
     public string FileName
@@ -89,31 +147,27 @@ namespace BS.Output.Bugzilla
 
     //}
 
-    private void NewIssue_CheckedChanged(object sender, EventArgs e)
+    private void NewBug_CheckedChanged(object sender, EventArgs e)
     {
 
-      //if (NewIssue.IsChecked.Value)
-      //{
-      //  ProjectControls.Visibility = Visibility.Visible;
-      //  SummaryControls.Visibility = Visibility.Visible;
-      //  DescriptionControls.Visibility = Visibility.Visible;
-      //  IssueIDControls.Visibility = Visibility.Collapsed;
+      if (NewBug.IsChecked.Value)
+      {
+        NewBugControls.Visibility = Visibility.Visible;
+        AttachToBugControls.Visibility = Visibility.Collapsed;
 
-      //  SummaryTextBox.SelectAll();
-      //  SummaryTextBox.Focus();
-      //}
-      //else
-      //{
-      //  ProjectControls.Visibility = Visibility.Collapsed;
-      //  SummaryControls.Visibility = Visibility.Collapsed;
-      //  DescriptionControls.Visibility = Visibility.Collapsed;
-      //  IssueIDControls.Visibility = Visibility.Visible;
+        SummaryTextBox.SelectAll();
+        SummaryTextBox.Focus();
+      }
+      else
+      {
+        NewBugControls.Visibility = Visibility.Collapsed;
+        AttachToBugControls.Visibility = Visibility.Visible;
         
-      //  IssueIDTextBox.SelectAll();
-      //  IssueIDTextBox.Focus();
-      //}
+        BugIDTextBox.SelectAll();
+        BugIDTextBox.Focus();
+      }
 
-      //ValidateData(null, null);
+      ValidateData(null, null);
 
     }
 
@@ -124,38 +178,22 @@ namespace BS.Output.Bugzilla
     
     private void ValidateData(object sender, EventArgs e)
     {
-      //OK.IsEnabled = ((CreateNewIssue && Validation.IsValid(ProjectComboBox) && Validation.IsValid(SummaryTextBox) && Validation.IsValid(DescriptionTextBox)) ||
-      //                (!CreateNewIssue && Validation.IsValid(IssueIDTextBox))) &&
-      //               Validation.IsValid(FileNameTextBox);
+      OK.IsEnabled = ((CreateNewBug && Validation.IsValid(ProductComboBox) &&
+                                       Validation.IsValid(ComponentComboBox) &&
+                                       Validation.IsValid(VersionComboBox) &&
+                                       Validation.IsValid(OperatingSystemComboBox) &&
+                                       Validation.IsValid(PlatformComboBox) &&
+                                       Validation.IsValid(PriorityComboBox) &&
+                                       Validation.IsValid(SeverityComboBox) &&
+                                       Validation.IsValid(SummaryTextBox) && 
+                                       Validation.IsValid(DescriptionTextBox)) ||
+                      (!CreateNewBug && Validation.IsValid(BugIDTextBox))) &&
+                     Validation.IsValid(FileNameTextBox);
     }
 
     private void OK_Click(object sender, RoutedEventArgs e)
     {
       this.DialogResult = true;
-    }
-
-  }
-
-  internal class ProjectItem
-  {
-    
-    private string projectID;
-    private string fullName;
-
-    public ProjectItem(string projectID, string fullName)
-    {
-      this.projectID = projectID;
-      this.fullName = fullName;
-    }
-
-    public string ProjectID
-    {
-      get { return projectID; }
-    }
-
-    public override string ToString()
-    {
-      return fullName;
     }
 
   }
