@@ -11,7 +11,12 @@ namespace BS.Output.Bugzilla
   internal class BugzillaProxy
   {
 
-    static internal async Task<bool> Login(string apiUrl, string userName, string password, ref CookieCollection loginCookies)
+    static internal async Task<LoginResult> LoginAsync(string apiUrl, string userName, string password)
+    {
+      return await Task.Factory.StartNew(() => Login(apiUrl, userName, password));
+    }
+
+    static private LoginResult Login(string apiUrl, string userName, string password)
     {
 
       XmlDocument doc = new XmlDocument();
@@ -54,35 +59,47 @@ namespace BS.Output.Bugzilla
       node.InnerText = "0";
 
 
-      using (HttpWebResponse response = GetResponse(apiUrl,  null, doc.OuterXml))
+      using (HttpWebResponse response = GetResponse(apiUrl, null, doc.OuterXml))
       {
 
         string faultMessage = string.Empty;
         if (CheckFaultExist(response, ref faultMessage))
         {
-          return false;
+          return new LoginResult(false, null);
         }
 
-        loginCookies = response.Cookies;
-        return true;
+        return new LoginResult(true, response.Cookies);
 
       }
 
     }
 
-    static internal async Task<bool> BugCreate(string apiUrl, 
-                                               CookieCollection loginCookies, 
-                                               string product, 
-                                               string component, 
-                                               string version, 
-                                               string opSys, 
-                                               string platform, 
-                                               string priority, 
-                                               string severity,
-                                               string summary, 
-                                               string description, 
-                                               ref Int32 bugID, 
-                                               ref string faultMessage)
+    static internal async Task<BugCreateResult> BugCreateAsync(string apiUrl, 
+                                                               CookieCollection loginCookies, 
+                                                               string product, 
+                                                               string component, 
+                                                               string version, 
+                                                               string opSys, 
+                                                               string platform, 
+                                                               string priority, 
+                                                               string severity,
+                                                               string summary, 
+                                                               string description)
+    {
+      return await Task.Factory.StartNew(() => BugCreate(apiUrl, loginCookies, product, component, version, opSys, platform, priority, severity, summary, description));
+    }
+
+    static private BugCreateResult BugCreate(string apiUrl,
+                                             CookieCollection loginCookies,
+                                             string product,
+                                             string component,
+                                             string version,
+                                             string opSys,
+                                             string platform,
+                                             string priority,
+                                             string severity,
+                                             string summary,
+                                             string description)
     {
 
       XmlDocument doc = new XmlDocument();
@@ -177,19 +194,19 @@ namespace BS.Output.Bugzilla
 
             string responseString = reader.ReadToEnd();
 
+            string faultMessage = null;
             if (CheckFaultExist(responseString, ref faultMessage))
             {
-              return false;
-
+              return new BugCreateResult(false, 0, faultMessage);
             }
             else
             {
               XmlDocument responseDoc = new XmlDocument();
               responseDoc.LoadXml(responseString);
 
-              bugID = Convert.ToInt32(responseDoc.DocumentElement.SelectSingleNode("descendant::value/int").InnerText);
+              int bugID = Convert.ToInt32(responseDoc.DocumentElement.SelectSingleNode("descendant::value/int").InnerText);
 
-              return true;
+              return new BugCreateResult(false, bugID, null);
 
             }
 
@@ -200,14 +217,24 @@ namespace BS.Output.Bugzilla
 
     }
 
-    static internal async Task<bool> BugAddAttachment(string apiUrl, 
-                                                      CookieCollection loginCookies, 
-                                                      Int32 bugID, 
-                                                      string comment, 
-                                                      Byte[] imageData,
-                                                      string fullFileName,
-                                                      string mimeType,
-                                                      ref string faultMessage)
+    static internal async Task<BugAddAttachmentResult> BugAddAttachmentAsync(string apiUrl, 
+                                                                             CookieCollection loginCookies, 
+                                                                             Int32 bugID, 
+                                                                             string comment, 
+                                                                             Byte[] imageData,
+                                                                             string fullFileName,
+                                                                             string mimeType)
+    {
+     return await Task.Factory.StartNew(() => BugAddAttachment(apiUrl,loginCookies,bugID,comment,imageData,fullFileName,mimeType));
+    }
+
+    static private BugAddAttachmentResult BugAddAttachment(string apiUrl,
+                                                           CookieCollection loginCookies,
+                                                           Int32 bugID,
+                                                           string comment,
+                                                           Byte[] imageData,
+                                                           string fullFileName,
+                                                           string mimeType)
     {
 
       XmlDocument doc = new XmlDocument();
@@ -275,12 +302,26 @@ namespace BS.Output.Bugzilla
 
       using (HttpWebResponse response = GetResponse(apiUrl, loginCookies, doc.OuterXml))
       {
-        return !CheckFaultExist(response, ref faultMessage);
+
+        string faultMessage = null;
+        if (CheckFaultExist(response, ref faultMessage))
+        {
+          return new BugAddAttachmentResult(false, faultMessage);
+        }
+        else
+        {
+          return new BugAddAttachmentResult(true, null);
+        }
       }
 
     }
 
-    static internal async Task<List<Item>> GetEditableProducts(string apiUrl, CookieCollection loginCookies)
+    static internal async Task<List<Item>> GetEditableProductsAsync(string apiUrl, CookieCollection loginCookies)
+    {
+      return await Task.Factory.StartNew(() => GetEditableProducts(apiUrl, loginCookies));
+    }
+
+    static private List<Item> GetEditableProducts(string apiUrl, CookieCollection loginCookies)
     {
 
       string productIDRequest = "<?xml version=\"1.0\"?>" + "<methodCall>" + "<methodName>Product.get_enterable_products</methodName>" + "</methodCall>";
@@ -306,7 +347,7 @@ namespace BS.Output.Bugzilla
       productRequest += "</data>" + "</array>" + "</value>" + "</member>" + "</struct>" + "</value>" + "</param>" + "</params>" + "</methodCall>";
 
       XmlDocument productDoc = new XmlDocument();
-      productDoc.LoadXml(GetResponseResult(apiUrl,  loginCookies, productRequest));
+      productDoc.LoadXml(GetResponseResult(apiUrl, loginCookies, productRequest));
 
       Dictionary<string, Item> products = new Dictionary<string, Item>();
 
@@ -343,14 +384,18 @@ namespace BS.Output.Bugzilla
 
     }
 
-    static internal async Task<Dictionary<string, ProductDetails>> GetProductDetails(string apiUrl, CookieCollection loginCookies, List<Item> products)
+    static internal async Task<Dictionary<string, ProductDetails>> GetProductDetailsAsync(string apiUrl, CookieCollection loginCookies, List<Item> products)
+    {
+      return await Task.Factory.StartNew(() => GetProductDetails(apiUrl, loginCookies, products));     
+    }
+
+    static private Dictionary<string, ProductDetails> GetProductDetails(string apiUrl, CookieCollection loginCookies, List<Item> products)
     {
 
       string request = "<?xml version=\"1.0\"?>" + "<methodCall>" + "<methodName>Bug.fields</methodName>" + "</methodCall>";
 
       XmlDocument doc = new XmlDocument();
-      doc.LoadXml(GetResponseResult(apiUrl,  loginCookies, request));
-
+      doc.LoadXml(GetResponseResult(apiUrl, loginCookies, request));
 
       Dictionary<string, ProductDetails> productDetails = new Dictionary<string, ProductDetails>();
       foreach (Item product in products)
@@ -497,6 +542,91 @@ namespace BS.Output.Bugzilla
 
   }
 
+  internal class LoginResult
+  {
+
+    bool success;
+    CookieCollection loginCookies;
+
+    public LoginResult(bool success,
+                       CookieCollection loginCookies)
+    {
+      this.success = success;
+      this.loginCookies = loginCookies;
+    }
+
+
+    public bool Success
+    {
+      get { return success; }
+    }
+
+    public CookieCollection LoginCookies
+    {
+      get { return loginCookies; }
+    }
+
+  }
+
+  internal class BugCreateResult
+  {
+
+    bool success;
+    int bugID;
+    string faultMessage;
+
+    public BugCreateResult(bool success,
+                           int bugID, 
+                           string faultMessage)
+    {
+      this.success = success;
+      this.bugID = bugID;
+      this.faultMessage = faultMessage;
+    }
+
+
+    public bool Success
+    {
+      get { return success; }
+    }
+
+    public int BugID
+    {
+      get { return bugID; }
+    }
+
+    public string FaultMessage
+    {
+      get { return faultMessage; }
+    }
+
+  }
+
+  internal class BugAddAttachmentResult
+  {
+
+    bool success;
+    string faultMessage;
+
+    public BugAddAttachmentResult(bool success,
+                           string faultMessage)
+    {
+      this.success = success;
+      this.faultMessage = faultMessage;
+    }
+
+
+    public bool Success
+    {
+      get { return success; }
+    }
+
+    public string FaultMessage
+    {
+      get { return faultMessage; }
+    }
+
+  }
 
   internal class Item
   {

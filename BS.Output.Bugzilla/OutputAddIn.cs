@@ -174,12 +174,13 @@ namespace BS.Output.Bugzilla
 
           }
 
-          CookieCollection loginCookies = null;
-          if (BugzillaProxy.Login(apiUrl, userName, password, ref loginCookies))
+          LoginResult loginResult = await BugzillaProxy.LoginAsync(apiUrl, userName, password);
+
+          if (loginResult.Success)
           {
 
-            List<Item> products = BugzillaProxy.GetEditableProducts(apiUrl,  loginCookies);
-            Dictionary<string, ProductDetails> productDetails = BugzillaProxy.GetProductDetails(apiUrl,  loginCookies, products);
+            List<Item> products = await BugzillaProxy.GetEditableProductsAsync(apiUrl, loginResult.LoginCookies);
+            Dictionary<string, ProductDetails> productDetails = await BugzillaProxy.GetProductDetailsAsync(apiUrl, loginResult.LoginCookies, products);
 
             // Show send window
             Send send = new Send(Output.Url, 
@@ -213,8 +214,7 @@ namespace BS.Output.Bugzilla
             string platform = null;
             string priority = null;
             string severity = null;
-            string faultMessage = string.Empty;
-
+            
             if (send.CreateNewBug)
             {
               product = send.Product;
@@ -225,21 +225,20 @@ namespace BS.Output.Bugzilla
               priority = send.Priority;
               severity = send.Severity;
 
-              if (!await BugzillaProxy.BugCreate(apiUrl,  
-                                                 loginCookies,
-                                                 send.Product,
-                                                 send.Component,
-                                                 send.Version,
-                                                 send.OperatingSystem,
-                                                 send.Platform,
-                                                 send.Priority,
-                                                 send.Severity,
-                                                 send.Summary,
-                                                 send.Description,
-                                                 ref bugID, 
-                                                 ref faultMessage))
+              BugCreateResult createResult = await BugzillaProxy.BugCreateAsync(apiUrl,
+                                                                                loginResult.LoginCookies,
+                                                                                send.Product,
+                                                                                send.Component,
+                                                                                send.Version,
+                                                                                send.OperatingSystem,
+                                                                                send.Platform,
+                                                                                send.Priority,
+                                                                                send.Severity,
+                                                                                send.Summary,
+                                                                                send.Description);
+              if (!createResult.Success)
               {
-                return new V3.SendResult(V3.Result.Failed, faultMessage);
+                return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
               }
               
             }
@@ -262,9 +261,11 @@ namespace BS.Output.Bugzilla
             byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
 
 
-            if (! await BugzillaProxy.BugAddAttachment(apiUrl, loginCookies, bugID, send.Comment, fileBytes, fullFileName, mimeType, ref faultMessage))
+            BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachmentAsync(apiUrl, loginResult.LoginCookies, bugID, send.Comment, fileBytes, fullFileName, mimeType);
+
+            if (!attachResult.Success)
             {
-              return new V3.SendResult(V3.Result.Failed, faultMessage);
+              return new V3.SendResult(V3.Result.Failed, attachResult.FaultMessage);
             }
 
 

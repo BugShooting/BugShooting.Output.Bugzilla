@@ -130,7 +130,7 @@
 
     public int LastBugID
     {
-      get { return LastBugID; }
+      get { return lastBugID; }
     }
 
   }

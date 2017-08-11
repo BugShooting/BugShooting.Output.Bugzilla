@@ -115,9 +115,9 @@ namespace BS.Output.Bugzilla
 
     private void ValidateData(object sender, EventArgs e)
     {
-      //OK.IsEnabled = Validation.IsValid(NameTextBox) &&
-      //               Validation.IsValid(UrlTextBox) &&
-      //               Validation.IsValid(FileFormatComboBox);
+      OK.IsEnabled = Validation.IsValid(NameTextBox) &&
+                     Validation.IsValid(UrlTextBox) &&
+                     Validation.IsValid(FileFormatComboBox);
     }
 
     private void OK_Click(object sender, RoutedEventArgs e)

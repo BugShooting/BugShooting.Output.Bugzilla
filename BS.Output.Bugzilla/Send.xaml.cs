@@ -171,7 +171,7 @@ namespace BS.Output.Bugzilla
 
     }
 
-    private void IssueID_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    private void BugID_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
       e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
     }

@@ -24,7 +24,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Project</Label>
-        <ComboBox x:Name="ProductComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="ProductComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -32,7 +32,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Component</Label>
-        <ComboBox x:Name="ComponentComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="ComponentComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -40,7 +40,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Version</Label>
-        <ComboBox x:Name="VersionComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="VersionComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -48,7 +48,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Operating system</Label>
-        <ComboBox x:Name="OperatingSystemComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="OperatingSystemComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -56,7 +56,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Platform</Label>
-        <ComboBox x:Name="PlatformComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="PlatformComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -64,7 +64,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Priority</Label>
-        <ComboBox x:Name="PriorityComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="PriorityComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -72,7 +72,7 @@
           <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Label Grid.Column="0">Severity</Label>
-        <ComboBox x:Name="SeverityComboBox" Grid.Column="1" SelectedValuePath="Name" local:Validation.Required="True" />
+        <ComboBox x:Name="SeverityComboBox" Grid.Column="1" SelectedValuePath="Name" DisplayMemberPath="Name" local:Validation.Required="True" />
       </Grid>
       <Grid Margin="4">
         <Grid.ColumnDefinitions>
@@ -108,15 +108,15 @@
         <Label Grid.Column="0">Comment</Label>
         <TextBox x:Name="CommentTextBox" Grid.Column="1" VerticalContentAlignment="Center" MaxLines="5" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" />
       </Grid>
-      <Grid Margin="4">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" SharedSizeGroup="Label"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Label Grid.Column="0">File name</Label>
-        <TextBox x:Name="FileNameTextBox" Grid.Column="1" VerticalContentAlignment="Center" local:Validation.Required="True" />
-      </Grid>
     </StackPanel>
+    <Grid Margin="4">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" SharedSizeGroup="Label"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Label Grid.Column="0">File name</Label>
+      <TextBox x:Name="FileNameTextBox" Grid.Column="1" VerticalContentAlignment="Center" local:Validation.Required="True" />
+    </Grid>
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0" >
       <Button x:Name="OK" Width="80" Height="24" Content="OK" Margin="4" IsDefault="True" Click="OK_Click" />
       <Button Width="80" Height="24" Content="Cancel" Margin="4" IsCancel="True" />
