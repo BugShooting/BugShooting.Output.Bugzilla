@@ -14,10 +14,6 @@
     string lastProduct;
     string lastComponent;
     string lastVersion;
-    string lastOperatingSystem;
-    string lastPlatform;
-    string lastPriority;
-    string lastSeverity;
     int lastBugID;
 
     public Output(string name, 
@@ -30,10 +26,6 @@
                   string lastProduct,
                   string lastComponent,
                   string lastVersion,
-                  string lastOperatingSystem,
-                  string lastPlatform,
-                  string lastPriority,
-                  string lastSeverity,
                   int lastBugID)
     {
       this.name = name;
@@ -46,10 +38,6 @@
       this.lastProduct = lastProduct;
       this.lastComponent = lastComponent;
       this.lastVersion = lastVersion;
-      this.lastOperatingSystem = lastOperatingSystem;
-      this.lastPlatform = lastPlatform;
-      this.lastPriority = lastPriority;
-      this.lastSeverity = lastSeverity;
       this.lastBugID = lastBugID;
     }
     
@@ -107,27 +95,7 @@
     {
       get { return lastVersion; }
     }
-
-    public string LastOperatingSystem
-    {
-      get { return lastOperatingSystem; }
-    }
-
-    public string LastPlatform
-    {
-      get { return lastPlatform; }
-    }
-
-    public string LastPriority
-    {
-      get { return lastPriority; }
-    }
-
-    public string LastSeverity
-    {
-      get { return lastSeverity; }
-    }
-
+    
     public int LastBugID
     {
       get { return lastBugID; }

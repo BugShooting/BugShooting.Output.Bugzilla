@@ -4,232 +4,125 @@ using System.IO;
 using System.Xml;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web;
+using System.Runtime.Serialization.Json;
+using System.Text;
 
 namespace BS.Output.Bugzilla
 {
 
+  XXXXXXXXXXXXX ist noch nicht fertig umgesetzt
+
+  /// <summary>
+  /// BugzillaProxy uses Bugzilla 5.x REST API
+  /// </summary>
   internal class BugzillaProxy
   {
-
-    static internal async Task<LoginResult> LoginAsync(string apiUrl, string userName, string password)
+    
+    static internal async Task<Dictionary<string, Product>> GetEditableProductsAsync(string apiUrl, string userName, string password)
     {
-      return await Task.Factory.StartNew(() => Login(apiUrl, userName, password));
+      return await Task.Factory.StartNew(() => GetEditableProducts(apiUrl, userName, password));
     }
 
-    static private LoginResult Login(string apiUrl, string userName, string password)
+    static private Dictionary<string, Product> GetEditableProducts(string apiUrl, string userName, string password)
     {
 
-      XmlDocument doc = new XmlDocument();
-      XmlNode node = default(XmlNode);
+      string requestUri = GetRequestUri(apiUrl, "product");
 
-      doc.AppendChild(doc.CreateXmlDeclaration("1.0", string.Empty, string.Empty));
+      requestUri = AddParameter(requestUri, "login", userName);
+      requestUri = AddParameter(requestUri, "password", password);
+      requestUri = AddParameter(requestUri, "type", "enterable");
 
-      XmlNode methodCallNode = doc.AppendChild(doc.CreateElement("methodCall"));
+      string requestResult = GetData(requestUri);
 
-      node = methodCallNode.AppendChild(doc.CreateElement("methodName"));
-      node.InnerText = "User.login";
-
-      node = methodCallNode.AppendChild(doc.CreateElement("params"));
-      node = node.AppendChild(doc.CreateElement("param"));
-      node = node.AppendChild(doc.CreateElement("value"));
-
-      XmlNode structNode = node.AppendChild(doc.CreateElement("struct"));
-
-      XmlNode memberNode = default(XmlNode);
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "login";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = userName;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "password";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = password;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "remember";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("boolean"));
-      node.InnerText = "0";
-
-
-      using (HttpWebResponse response = GetResponse(apiUrl, null, doc.OuterXml))
+      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Products));
+      using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(requestResult)))
       {
 
-        string faultMessage = string.Empty;
-        if (CheckFaultExist(response, ref faultMessage))
+        Dictionary<string, Product> products = new Dictionary<string, Product>();
+
+        foreach (Product product in ((Products)serializer.ReadObject(stream)).Items)
         {
-          return new LoginResult(false, null);
+          products.Add(product.Name, product);
         }
 
-        return new LoginResult(true, response.Cookies);
-
+        return products;
       }
 
     }
 
-    static internal async Task<BugCreateResult> BugCreateAsync(string apiUrl, 
-                                                               CookieCollection loginCookies, 
+    static internal async Task<BugCreateResult> BugCreateAsync(string apiUrl,
+                                                               string userName,
+                                                               string password,
                                                                string product, 
                                                                string component, 
                                                                string version, 
-                                                               string operatingSystem, 
-                                                               string platform, 
-                                                               string priority, 
-                                                               string severity,
                                                                string summary, 
                                                                string description)
     {
-      return await Task.Factory.StartNew(() => BugCreate(apiUrl, loginCookies, product, component, version, operatingSystem, platform, priority, severity, summary, description));
+      return await Task.Factory.StartNew(() => BugCreate(apiUrl, userName, password, product, component, version, summary, description));
     }
 
     static private BugCreateResult BugCreate(string apiUrl,
-                                             CookieCollection loginCookies,
+                                             string userName,
+                                             string password,
                                              string product,
                                              string component,
                                              string version,
-                                             string operatingSystem,
-                                             string platform,
-                                             string priority,
-                                             string severity,
                                              string summary,
                                              string description)
     {
 
-      XmlDocument doc = new XmlDocument();
-      XmlNode node = default(XmlNode);
+      string requestUri = GetRequestUri(apiUrl, "bug");
 
-      doc.AppendChild(doc.CreateXmlDeclaration("1.0", string.Empty, string.Empty));
+      requestUri = AddParameter(requestUri, "login", userName);
+      requestUri = AddParameter(requestUri, "password", password);
 
-      XmlNode methodCallNode = doc.AppendChild(doc.CreateElement("methodCall"));
-
-      node = methodCallNode.AppendChild(doc.CreateElement("methodName"));
-      node.InnerText = "Bug.create";
-
-      node = methodCallNode.AppendChild(doc.CreateElement("params"));
-      node = node.AppendChild(doc.CreateElement("param"));
-      node = node.AppendChild(doc.CreateElement("value"));
-
-      XmlNode structNode = node.AppendChild(doc.CreateElement("struct"));
-
-      XmlNode memberNode = default(XmlNode);
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "product";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = product;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "component";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = component;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "summary";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = summary;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "version";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = version;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "description";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = description;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "op_sys";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = operatingSystem;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "platform";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = platform;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "priority";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = priority;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "severity";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = severity;
+      string requestData = string.Format("{{\"product\":\"{0}\"," +
+                                          "\"component\":\"{1}\"," +
+                                          "\"version\":\"{2}\"," +
+                                          "\"op_sys\":\"XXXXXXXXXXXXXXXXXX\"," +
+                                          "\"platform\":\"XXXXXXXXXXXXXXXXXX\"," +
+                                          "\"priority\":\"XXXXXXXXXXXXXXXXXX\"," +
+                                          "\"severity\":\"XXXXXXXXXXXXXXXXXX\"," +
+                                          "\"summary\":\"{3}\"," +
+                                          "\"description\":\"{4}\"}}",
+                                          product, component,version,summary,description);
 
 
-      using (HttpWebResponse response = GetResponse(apiUrl, loginCookies, doc.OuterXml))
+      string requestResult = PostData(requestUri, requestData);
+
+      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Products));
+      using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(requestResult)))
       {
 
-        using (Stream stream = response.GetResponseStream())
-        {
-          using (StreamReader reader = new StreamReader(stream))
-          {
+        //Dictionary<string, Product> products = new Dictionary<string, Product>();
 
-            string responseString = reader.ReadToEnd();
+        //foreach (Product product in ((Products)serializer.ReadObject(stream)).Items)
+        //{
+        //  products.Add(product.Name, product);
+        //}
 
-            string faultMessage = null;
-            if (CheckFaultExist(responseString, ref faultMessage))
-            {
-              return new BugCreateResult(false, 0, faultMessage);
-            }
-            else
-            {
-              XmlDocument responseDoc = new XmlDocument();
-              responseDoc.LoadXml(responseString);
-
-              int bugID = Convert.ToInt32(responseDoc.DocumentElement.SelectSingleNode("descendant::value/int").InnerText);
-
-              return new BugCreateResult(false, bugID, null);
-
-            }
-
-          }
-        }
-
+        return null;
       }
-
+       
     }
 
-    static internal async Task<BugAddAttachmentResult> BugAddAttachmentAsync(string apiUrl, 
-                                                                             CookieCollection loginCookies, 
+    static internal async Task<BugAddAttachmentResult> BugAddAttachmentAsync(string apiUrl,
+                                                                             string userName,
+                                                                             string password,
                                                                              Int32 bugID, 
                                                                              string comment, 
                                                                              Byte[] imageData,
                                                                              string fullFileName,
                                                                              string mimeType)
     {
-     return await Task.Factory.StartNew(() => BugAddAttachment(apiUrl,loginCookies,bugID,comment,imageData,fullFileName,mimeType));
+      return await Task.Factory.StartNew(() => BugAddAttachment(apiUrl, userName, password, bugID, comment, imageData, fullFileName, mimeType));
     }
 
     static private BugAddAttachmentResult BugAddAttachment(string apiUrl,
-                                                           CookieCollection loginCookies,
+                                                           string userName,
+                                                           string password,
                                                            Int32 bugID,
                                                            string comment,
                                                            Byte[] imageData,
@@ -254,6 +147,20 @@ namespace BS.Output.Bugzilla
       XmlNode structNode = node.AppendChild(doc.CreateElement("struct"));
 
       XmlNode memberNode = default(XmlNode);
+
+      memberNode = structNode.AppendChild(doc.CreateElement("member"));
+      node = memberNode.AppendChild(doc.CreateElement("name"));
+      node.InnerText = "login";
+      node = memberNode.AppendChild(doc.CreateElement("value"));
+      node = node.AppendChild(doc.CreateElement("string"));
+      node.InnerText = userName;
+
+      memberNode = structNode.AppendChild(doc.CreateElement("member"));
+      node = memberNode.AppendChild(doc.CreateElement("name"));
+      node.InnerText = "password";
+      node = memberNode.AppendChild(doc.CreateElement("value"));
+      node = node.AppendChild(doc.CreateElement("string"));
+      node.InnerText = password;
 
       memberNode = structNode.AppendChild(doc.CreateElement("member"));
       node = memberNode.AppendChild(doc.CreateElement("name"));
@@ -300,209 +207,49 @@ namespace BS.Output.Bugzilla
       node = node.AppendChild(doc.CreateElement("string"));
       node.InnerText = mimeType;
 
-      using (HttpWebResponse response = GetResponse(apiUrl, loginCookies, doc.OuterXml))
-      {
+      string responseResult = GetResponseResult(apiUrl, doc.OuterXml);
 
-        string faultMessage = null;
-        if (CheckFaultExist(response, ref faultMessage))
-        {
-          return new BugAddAttachmentResult(false, faultMessage);
-        }
-        else
-        {
-          return new BugAddAttachmentResult(true, null);
-        }
+      string faultMessage = null;
+      if (CheckFaultExist(responseResult, ref faultMessage))
+      {
+        return new BugAddAttachmentResult(false, faultMessage);
+      }
+      else
+      {
+        return new BugAddAttachmentResult(true, null);
       }
 
     }
 
-    static internal async Task<List<Item>> GetEditableProductsAsync(string apiUrl, CookieCollection loginCookies)
-    {
-      return await Task.Factory.StartNew(() => GetEditableProducts(apiUrl, loginCookies));
-    }
-
-    static private List<Item> GetEditableProducts(string apiUrl, CookieCollection loginCookies)
-    {
-
-      string productIDRequest = "<?xml version=\"1.0\"?>" + "<methodCall>" + "<methodName>Product.get_enterable_products</methodName>" + "</methodCall>";
-
-      XmlDocument productIDDoc = new XmlDocument();
-      productIDDoc.LoadXml(GetResponseResult(apiUrl, loginCookies, productIDRequest));
-
-      List<string> prodctIDs = new List<string>();
-      foreach (XmlNode node in productIDDoc.GetElementsByTagName("int"))
-      {
-        prodctIDs.Add(node.InnerText);
-      }
-
-      // ---------------------------------------------------------------------------------
-
-      string productRequest = "<?xml version=\"1.0\"?>" + "<methodCall>" + "<methodName>Product.get</methodName>" + "<params>" + "<param>" + "<value>" + "<struct>" + "<member>" + "<name>ids</name>" + "<value>" + "<array>" + "<data>";
-
-      foreach (string productID in prodctIDs)
-      {
-        productRequest += "<value><i4>" + productID + "</i4></value>";
-      }
-
-      productRequest += "</data>" + "</array>" + "</value>" + "</member>" + "</struct>" + "</value>" + "</param>" + "</params>" + "</methodCall>";
-
-      XmlDocument productDoc = new XmlDocument();
-      productDoc.LoadXml(GetResponseResult(apiUrl, loginCookies, productRequest));
-
-      Dictionary<string, Item> products = new Dictionary<string, Item>();
-
-      foreach (XmlNode node in productDoc.GetElementsByTagName("member"))
-      {
-
-        foreach (XmlNode nameNode in node.ChildNodes)
-        {
-
-          if (nameNode.Name.ToLower() == "name" && nameNode.InnerText.ToLower() == "name")
-          {
-
-            foreach (XmlNode valueNode in node.ChildNodes)
-            {
-
-              if (valueNode.Name.ToLower() == "value")
-              {
-                if (!products.ContainsKey(valueNode.InnerText))
-                {
-                  products.Add(valueNode.InnerText, new Item(valueNode.InnerText));
-                }
-                break;
-              }
-
-            }
-
-            break;
-          }
-
-        }
-      }
-
-      return new List<Item>(products.Values);
-
-    }
-
-    static internal async Task<Dictionary<string, ProductDetails>> GetProductDetailsAsync(string apiUrl, CookieCollection loginCookies, List<Item> products)
-    {
-      return await Task.Factory.StartNew(() => GetProductDetails(apiUrl, loginCookies, products));     
-    }
-
-    static private Dictionary<string, ProductDetails> GetProductDetails(string apiUrl, CookieCollection loginCookies, List<Item> products)
-    {
-
-      string request = "<?xml version=\"1.0\"?>" + "<methodCall>" + "<methodName>Bug.fields</methodName>" + "</methodCall>";
-
-      XmlDocument doc = new XmlDocument();
-      doc.LoadXml(GetResponseResult(apiUrl, loginCookies, request));
-
-      Dictionary<string, ProductDetails> productDetails = new Dictionary<string, ProductDetails>();
-      foreach (Item product in products)
-      {
-        productDetails.Add(product.Name, new ProductDetails());
-      }
-
-      FillProductDetails(doc, "component", productDetails);
-      FillProductDetails(doc, "version", productDetails);
-      FillProductDetails(doc, "op_sys", productDetails);
-      FillProductDetails(doc, "rep_platform", productDetails);
-      FillProductDetails(doc, "priority", productDetails);
-      FillProductDetails(doc, "bug_severity", productDetails);
-
-      return productDetails;
-
-    }
-
-    private static void FillProductDetails(XmlDocument doc, string itemName, Dictionary<string, ProductDetails> productDetails)
-    {
-      XmlNode rootNode = doc.DocumentElement.SelectSingleNode("descendant::value[struct/member/name='name' and struct/member/value/string='" + itemName + "']").SelectSingleNode("descendant::member[name='values']");
-
-      foreach (XmlNode itemNode in rootNode.SelectNodes("descendant::struct[member/name='visibility_values']"))
-      {
-        XmlNode productNode = itemNode.SelectSingleNode("descendant:: member/value/array/data/value/string");
-        XmlNode nameNode = itemNode.SelectSingleNode("descendant::member[name='name']").SelectSingleNode("descendant::value/string");
-
-
-        if ((productNode == null))
-        {
-          foreach (string product in productDetails.Keys)
-          {
-            productDetails[product].Add(itemName, nameNode.InnerText);
-          }
-        }
-        else
-        {
-          string product = productNode.InnerText;
-
-          if (productDetails.ContainsKey(product))
-          {
-            productDetails[product].Add(itemName, nameNode.InnerText);
-          }
-
-        }
-
-      }
-
-    }
-    
-    private static HttpWebResponse GetResponse(string apiUrl, CookieCollection cookies, string requestString)
+    private static string GetResponseResult(string apiUrl, string requestString)
     {
 
       byte[] requestData = System.Text.Encoding.ASCII.GetBytes(requestString);
 
       HttpWebRequest request = (HttpWebRequest)WebRequest.Create(apiUrl);
-      
+
       request.Method = "POST";
       request.ContentType = "text/xml";
       request.ContentLength = requestData.Length;
-
-      request.CookieContainer = new CookieContainer();
-      if ((cookies != null))
-      {
-        request.CookieContainer.Add(cookies);
-      }
 
       using (Stream requestStream = request.GetRequestStream())
       {
 
         requestStream.Write(requestData, 0, requestData.Length);
 
-        return (HttpWebResponse)request.GetResponse();
-
-      }
-
-    }
-
-    private static string GetResponseResult(string apiUrl, CookieCollection cookies, string requestString)
-    {
-
-      using (HttpWebResponse response = GetResponse(apiUrl, cookies, requestString))
-      {
-        using (Stream stream = response.GetResponseStream())
+        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
         {
-          using (StreamReader reader = new StreamReader(stream))
+          using (Stream stream = response.GetResponseStream())
           {
-            return reader.ReadToEnd();
+            using (StreamReader reader = new StreamReader(stream))
+            {
+              return reader.ReadToEnd();
+            }
           }
         }
+
       }
-
-    }
-
-    private static bool CheckFaultExist(HttpWebResponse response, ref string faultMessage)
-    {
-
-      using (Stream stream = response.GetResponseStream())
-      {
-        using (StreamReader reader = new StreamReader(stream))
-        {
-
-          return CheckFaultExist(reader.ReadToEnd(), ref faultMessage);
-
-        }
-      }
-
+      
     }
 
     private static bool CheckFaultExist(string responseString, ref string faultMessage)
@@ -510,8 +257,7 @@ namespace BS.Output.Bugzilla
 
       XmlDocument doc = new XmlDocument();
       doc.LoadXml(responseString);
-
-
+      
       if (doc.GetElementsByTagName("fault").Count > 0)
       {
         foreach (XmlNode memberNode in doc.GetElementsByTagName("member"))
@@ -540,33 +286,130 @@ namespace BS.Output.Bugzilla
 
     }
 
+    private static string GetRequestUri(string url, string method)
+    {
+
+      string apiUrl = url;
+
+      if (!(apiUrl.LastIndexOf("/") == apiUrl.Length - 1))
+      {
+        apiUrl += "/";
+      }
+
+      return apiUrl + "rest/" + method;
+
+    }
+
+    private static string AddParameter(string requestUri, string parameter, string value)
+    {
+
+      if (requestUri.Contains("?"))
+      {
+        requestUri += "&";
+      }
+      else
+      {
+        requestUri += "?";
+      }
+
+      return requestUri + parameter + "=" + HttpUtility.UrlEncode(value);
+
+    }
+
+    private static string GetData(string requestUri)
+    {
+
+      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUri);
+      request.Method = "GET";
+      request.Accept = "application/json";
+      request.ContentType = "application/json";
+
+      using (WebResponse response = request.GetResponse())
+      {
+        using (Stream stream = response.GetResponseStream())
+        {
+          using (StreamReader reader = new StreamReader(stream))
+          {
+            return reader.ReadToEnd();
+          }
+        }
+      }
+    }
+
+    private static string PostData(string requestUri, string data)
+    {
+      
+      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUri);
+      request.Method = "POST";
+      request.Accept = "application/json";
+      request.ContentType = "application/json";
+     
+      byte[] postData = Encoding.UTF8.GetBytes(data);
+      request.ContentLength = postData.Length;
+
+      using (Stream requestStream = request.GetRequestStream())
+      {
+        requestStream.Write(postData, 0, postData.Length);
+        requestStream.Close();
+      }
+
+      using (WebResponse response = request.GetResponse())
+      {
+        using (Stream stream = response.GetResponseStream())
+        {
+          using (StreamReader reader = new StreamReader(stream))
+          {
+            return reader.ReadToEnd();
+          }
+        }
+      }
+
+    }
+
   }
 
-  internal class LoginResult
+  [System.Runtime.Serialization.DataContract()]
+  internal class Products
   {
 
-    bool success;
-    CookieCollection loginCookies;
+    [System.Runtime.Serialization.DataMember(Name = "products")]
+    public List<Product> Items { get; set; }
+    
+  }
 
-    public LoginResult(bool success,
-                       CookieCollection loginCookies)
-    {
-      this.success = success;
-      this.loginCookies = loginCookies;
-    }
+  [System.Runtime.Serialization.DataContract()]
+  internal class Product
+  {
 
+    [System.Runtime.Serialization.DataMember(Name = "name")]
+    public string Name { get; set; }
 
-    public bool Success
-    {
-      get { return success; }
-    }
+    [System.Runtime.Serialization.DataMember(Name = "components")]
+    public List<Component> Components { get; set; }
 
-    public CookieCollection LoginCookies
-    {
-      get { return loginCookies; }
-    }
+    [System.Runtime.Serialization.DataMember(Name = "versions")]
+    public List<Version> Versions { get; set; }
 
   }
+
+  [System.Runtime.Serialization.DataContract()]
+  internal class Component
+  {
+
+    [System.Runtime.Serialization.DataMember(Name = "name")]
+    public string Name { get; set; }
+
+  }
+
+  [System.Runtime.Serialization.DataContract()]
+  internal class Version
+  {
+
+    [System.Runtime.Serialization.DataMember(Name = "name")]
+    public string Name { get; set; }
+
+  }
+
 
   internal class BugCreateResult
   {
@@ -624,76 +467,6 @@ namespace BS.Output.Bugzilla
     public string FaultMessage
     {
       get { return faultMessage; }
-    }
-
-  }
-
-  internal class Item
-  {
-
-    private string name;
-
-    public Item(string name)
-    {
-      this.name = name;
-    }
-
-    public string Name
-    {
-      get { return name; }
-    }
-
-  }
-
-  internal class ProductDetails
-  {
-    
-    Dictionary<string, List<Item>> items;
-
-    public ProductDetails()
-    {
-      items = new Dictionary<string, List<Item>>();
-      items.Add("component", new List<Item>());
-      items.Add("version", new List<Item>());
-      items.Add("op_sys", new List<Item>());
-      items.Add("rep_platform", new List<Item>());
-      items.Add("priority", new List<Item>());
-      items.Add("bug_severity", new List<Item>());
-    }
-
-    public void Add(string name, string value)
-    {
-      items[name].Add(new Item(value));
-    }
-
-    public List<Item> Components
-    {
-      get { return items["component"]; }
-    }
-
-    public List<Item> Versions
-    {
-      get { return items["version"]; }
-    }
-
-    public List<Item> OperatingSystems
-    {
-      get { return items["op_sys"]; }
-    }
-
-    public List<Item> Platforms
-    {
-      get { return items["rep_platform"]; }
-    }
-
-    public List<Item> Priority
-    {
-      get { return items["priority"]; }
-    }
-
-    public List<Item> Severity
-    {
-      get { return items["bug_severity"]; }
     }
 
   }

@@ -48,10 +48,6 @@ namespace BS.Output.Bugzilla
                                  String.Empty,
                                  String.Empty,
                                  String.Empty,
-                                 String.Empty,
-                                 String.Empty,
-                                 String.Empty,
-                                 String.Empty,
                                  1);
 
       return EditOutput(Owner, output);
@@ -78,10 +74,6 @@ namespace BS.Output.Bugzilla
                           Output.LastProduct,
                           Output.LastComponent,
                           Output.LastVersion,
-                          Output.LastOperatingSystem,
-                          Output.LastPlatform,
-                          Output.LastPriority,
-                          Output.LastSeverity,
                           Output.LastBugID);
       }
       else
@@ -106,10 +98,6 @@ namespace BS.Output.Bugzilla
       outputValues.Add(new OutputValue("LastProduct", Output.LastProduct));
       outputValues.Add(new OutputValue("LastComponent", Output.LastComponent));
       outputValues.Add(new OutputValue("LastVersion", Output.LastVersion));
-      outputValues.Add(new OutputValue("LastOperatingSystem", Output.LastOperatingSystem));
-      outputValues.Add(new OutputValue("LastPlatform", Output.LastPlatform));
-      outputValues.Add(new OutputValue("LastPriority", Output.LastPriority));
-      outputValues.Add(new OutputValue("LastSeverity", Output.LastSeverity));
       outputValues.Add(new OutputValue("LastBugID", Convert.ToString(Output.LastBugID)));
 
       return outputValues;
@@ -129,10 +117,6 @@ namespace BS.Output.Bugzilla
                         OutputValues["LastProduct", string.Empty].Value,
                         OutputValues["LastComponent", string.Empty].Value,
                         OutputValues["LastVersion", string.Empty].Value,
-                        OutputValues["LastOperatingSystem", string.Empty].Value,
-                        OutputValues["LastPlatform", string.Empty].Value,
-                        OutputValues["LastPriority", string.Empty].Value,
-                        OutputValues["LastSeverity", string.Empty].Value,
                         Convert.ToInt32(OutputValues["LastBugID", "1"].Value));
 
     }
@@ -143,7 +127,6 @@ namespace BS.Output.Bugzilla
       try
       {
 
-        string apiUrl = Output.Url + "/xmlrpc.cgi";
         string userName = Output.UserName;
         string password = Output.Password;
         bool showLogin = string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password);
@@ -160,8 +143,8 @@ namespace BS.Output.Bugzilla
             // Show credentials window
             Credentials credentials = new Credentials(Output.Url, userName, password, rememberCredentials);
 
-            var ownerHelper = new System.Windows.Interop.WindowInteropHelper(credentials);
-            ownerHelper.Owner = Owner.Handle;
+            var credentialsOwnerHelper = new System.Windows.Interop.WindowInteropHelper(credentials);
+            credentialsOwnerHelper.Owner = Owner.Handle;
 
             if (credentials.ShowDialog() != true)
             {
@@ -174,125 +157,93 @@ namespace BS.Output.Bugzilla
 
           }
 
-          LoginResult loginResult = await BugzillaProxy.LoginAsync(apiUrl, userName, password);
+          Dictionary<string, Product> products = await BugzillaProxy.GetEditableProductsAsync(Output.Url, userName, password);
 
-          if (loginResult.Success)
+          // Show send window
+          Send send = new Send(Output.Url,
+                               Output.LastProduct,
+                               Output.LastComponent,
+                               Output.LastVersion,
+                               Output.LastBugID,
+                               products,
+                               userName,
+                               password,
+                               fileName);
+
+          var sendOwnerHelper = new System.Windows.Interop.WindowInteropHelper(send);
+          sendOwnerHelper.Owner = Owner.Handle;
+
+          if (!send.ShowDialog() == true)
           {
-
-            List<Item> products = await BugzillaProxy.GetEditableProductsAsync(apiUrl, loginResult.LoginCookies);
-            Dictionary<string, ProductDetails> productDetails = await BugzillaProxy.GetProductDetailsAsync(apiUrl, loginResult.LoginCookies, products);
-
-            // Show send window
-            Send send = new Send(Output.Url, 
-                                 Output.LastProduct,
-                                 Output.LastComponent,
-                                 Output.LastVersion,
-                                 Output.LastOperatingSystem, 
-                                 Output.LastPlatform,
-                                 Output.LastPriority,
-                                 Output.LastSeverity, 
-                                 Output.LastBugID, 
-                                 products,
-                                 productDetails, 
-                                 userName,
-                                 password,
-                                 fileName);
-
-            var ownerHelper = new System.Windows.Interop.WindowInteropHelper(send);
-            ownerHelper.Owner = Owner.Handle;
-
-            if (!send.ShowDialog() == true)
-            {
-              return new V3.SendResult(V3.Result.Canceled);
-            }
-
-            Int32 bugID = 1;
-            string product = null;
-            string component = null;
-            string version = null;
-            string operatingSystem = null;
-            string platform = null;
-            string priority = null;
-            string severity = null;
-            
-            if (send.CreateNewBug)
-            {
-              product = send.Product;
-              component = send.Component;
-              version = send.Version;
-              operatingSystem = send.OperatingSystem;
-              platform = send.Platform;
-              priority = send.Priority;
-              severity = send.Severity;
-
-              BugCreateResult createResult = await BugzillaProxy.BugCreateAsync(apiUrl,
-                                                                                loginResult.LoginCookies,
-                                                                                send.Product,
-                                                                                send.Component,
-                                                                                send.Version,
-                                                                                send.OperatingSystem,
-                                                                                send.Platform,
-                                                                                send.Priority,
-                                                                                send.Severity,
-                                                                                send.Summary,
-                                                                                send.Description);
-              if (!createResult.Success)
-              {
-                return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
-              }
-              
-            }
-            else
-            {
-              product = Output.LastProduct;
-              component = Output.LastComponent;
-              version = Output.LastVersion;
-              operatingSystem = Output.LastOperatingSystem;
-              platform = Output.LastPlatform;
-              priority = Output.LastPriority;
-              severity = Output.LastSeverity;
-              bugID = send.BugID;
-
-            }
-
-            string fullFileName = send.FileName + "." + V3.FileHelper.GetFileExtention(Output.FileFormat);
-
-            string mimeType = V3.FileHelper.GetMimeType(Output.FileFormat);
-            byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
-
-
-            BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachmentAsync(apiUrl, loginResult.LoginCookies, bugID, send.Comment, fileBytes, fullFileName, mimeType);
-
-            if (!attachResult.Success)
-            {
-              return new V3.SendResult(V3.Result.Failed, attachResult.FaultMessage);
-            }
-
-
-            // Open bug in browser
-            if (Output.OpenItemInBrowser)
-            {
-              V3.WebHelper.OpenUrl(Output.Url + "/show_bug.cgi?id=" + Convert.ToString(bugID));
-            }
-
-            return new V3.SendResult(V3.Result.Success,
-                                     new Output(Output.Name,
-                                                Output.Url,
-                                                (rememberCredentials) ? userName : Output.UserName,
-                                                (rememberCredentials) ? password : Output.Password,
-                                                Output.FileName,
-                                                Output.FileFormat,
-                                                Output.OpenItemInBrowser,
-                                                product,
-                                                component,
-                                                version,
-                                                operatingSystem,
-                                                platform,
-                                                priority,
-                                                severity,
-                                                bugID));
-                      
+            return new V3.SendResult(V3.Result.Canceled);
           }
+
+          Int32 bugID = 1;
+          string product = null;
+          string component = null;
+          string version = null;
+
+          if (send.CreateNewBug)
+          {
+            product = send.Product;
+            component = send.Component;
+            version = send.Version;
+
+            BugCreateResult createResult = await BugzillaProxy.BugCreateAsync(Output.Url,
+                                                                              userName,
+                                                                              password,
+                                                                              send.Product,
+                                                                              send.Component,
+                                                                              send.Version,
+                                                                              send.Summary,
+                                                                              send.Description);
+            if (!createResult.Success)
+            {
+              return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
+            }
+
+          }
+          else
+          {
+            product = Output.LastProduct;
+            component = Output.LastComponent;
+            version = Output.LastVersion;
+            bugID = send.BugID;
+
+          }
+
+          string fullFileName = send.FileName + "." + V3.FileHelper.GetFileExtention(Output.FileFormat);
+
+          string mimeType = V3.FileHelper.GetMimeType(Output.FileFormat);
+          byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
+
+
+          BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachmentAsync(Output.Url, userName, password, bugID, send.Comment, fileBytes, fullFileName, mimeType);
+
+          if (!attachResult.Success)
+          {
+            return new V3.SendResult(V3.Result.Failed, attachResult.FaultMessage);
+          }
+
+
+          // Open bug in browser
+          if (Output.OpenItemInBrowser)
+          {
+            V3.WebHelper.OpenUrl(Output.Url + "/show_bug.cgi?id=" + Convert.ToString(bugID));
+          }
+
+          return new V3.SendResult(V3.Result.Success,
+                                    new Output(Output.Name,
+                                              Output.Url,
+                                              (rememberCredentials) ? userName : Output.UserName,
+                                              (rememberCredentials) ? password : Output.Password,
+                                              Output.FileName,
+                                              Output.FileFormat,
+                                              Output.OpenItemInBrowser,
+                                              product,
+                                              component,
+                                              version,
+                                              bugID));
 
         }
         
