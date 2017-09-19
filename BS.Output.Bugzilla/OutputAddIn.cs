@@ -48,6 +48,10 @@ namespace BS.Output.Bugzilla
                                  String.Empty,
                                  String.Empty,
                                  String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
+                                 String.Empty,
                                  1);
 
       return EditOutput(Owner, output);
@@ -74,6 +78,10 @@ namespace BS.Output.Bugzilla
                           Output.LastProduct,
                           Output.LastComponent,
                           Output.LastVersion,
+                          Output.LastOperatingSystem,
+                          Output.LastPlatform,
+                          Output.LastPriority,
+                          Output.LastSeverity,
                           Output.LastBugID);
       }
       else
@@ -98,6 +106,10 @@ namespace BS.Output.Bugzilla
       outputValues.Add(new OutputValue("LastProduct", Output.LastProduct));
       outputValues.Add(new OutputValue("LastComponent", Output.LastComponent));
       outputValues.Add(new OutputValue("LastVersion", Output.LastVersion));
+      outputValues.Add(new OutputValue("LastOperatingSystem", Output.LastOperatingSystem));
+      outputValues.Add(new OutputValue("LastPlatform", Output.LastPlatform));
+      outputValues.Add(new OutputValue("LastPriority", Output.LastPriority));
+      outputValues.Add(new OutputValue("LastSeverity", Output.LastSeverity));
       outputValues.Add(new OutputValue("LastBugID", Convert.ToString(Output.LastBugID)));
 
       return outputValues;
@@ -117,6 +129,10 @@ namespace BS.Output.Bugzilla
                         OutputValues["LastProduct", string.Empty].Value,
                         OutputValues["LastComponent", string.Empty].Value,
                         OutputValues["LastVersion", string.Empty].Value,
+                        OutputValues["LastOperatingSystem", string.Empty].Value,
+                        OutputValues["LastPlatform", string.Empty].Value,
+                        OutputValues["LastPriority", string.Empty].Value,
+                        OutputValues["LastSeverity", string.Empty].Value,
                         Convert.ToInt32(OutputValues["LastBugID", "1"].Value));
 
     }
@@ -157,7 +173,10 @@ namespace BS.Output.Bugzilla
 
           }
 
-          Dictionary<string, Product> products = await BugzillaProxy.GetEditableProductsAsync(Output.Url, userName, password);
+          Dictionary<string, Product> products = await BugzillaProxy.GetEditableProducts(Output.Url, userName, password);
+
+          // TODO Fields verwenden
+          Fields fields = await BugzillaProxy.GetBugFields(Output.Url, userName, password);
 
           // Show send window
           Send send = new Send(Output.Url,
@@ -182,21 +201,33 @@ namespace BS.Output.Bugzilla
           string product = null;
           string component = null;
           string version = null;
+          string operatingSystem = null;
+          string platform = null;
+          string priority = null;
+          string severity = null;
 
           if (send.CreateNewBug)
           {
             product = send.Product;
             component = send.Component;
             version = send.Version;
+            operatingSystem = send.OperatingSystem;
+            platform = send.Platform;
+            priority = send.Priority;
+            severity = send.Severity;
 
-            BugCreateResult createResult = await BugzillaProxy.BugCreateAsync(Output.Url,
-                                                                              userName,
-                                                                              password,
-                                                                              send.Product,
-                                                                              send.Component,
-                                                                              send.Version,
-                                                                              send.Summary,
-                                                                              send.Description);
+            BugCreateResult createResult = await BugzillaProxy.BugCreate(Output.Url,
+                                                                         userName,
+                                                                         password,
+                                                                         product,
+                                                                         component,
+                                                                         version,
+                                                                         operatingSystem,
+                                                                         platform,
+                                                                         priority,
+                                                                         severity,
+                                                                         send.Summary,
+                                                                         send.Description);
             if (!createResult.Success)
             {
               return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
@@ -208,6 +239,10 @@ namespace BS.Output.Bugzilla
             product = Output.LastProduct;
             component = Output.LastComponent;
             version = Output.LastVersion;
+            operatingSystem = Output.LastOperatingSystem;
+            platform = Output.LastPlatform;
+            priority = Output.LastPriority;
+            severity = Output.LastSeverity;
             bugID = send.BugID;
 
           }
@@ -218,7 +253,7 @@ namespace BS.Output.Bugzilla
           byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
 
 
-          BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachmentAsync(Output.Url, userName, password, bugID, send.Comment, fileBytes, fullFileName, mimeType);
+          BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachment(Output.Url, userName, password, bugID, send.Comment, fileBytes, fullFileName, mimeType);
 
           if (!attachResult.Success)
           {
@@ -233,7 +268,7 @@ namespace BS.Output.Bugzilla
           }
 
           return new V3.SendResult(V3.Result.Success,
-                                    new Output(Output.Name,
+                                   new Output(Output.Name,
                                               Output.Url,
                                               (rememberCredentials) ? userName : Output.UserName,
                                               (rememberCredentials) ? password : Output.Password,
@@ -243,6 +278,10 @@ namespace BS.Output.Bugzilla
                                               product,
                                               component,
                                               version,
+                                              operatingSystem,
+                                              platform,
+                                              priority,
+                                              severity,
                                               bugID));
 
         }

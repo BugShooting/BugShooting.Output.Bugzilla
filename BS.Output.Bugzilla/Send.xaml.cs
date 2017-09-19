@@ -44,6 +44,10 @@ namespace BS.Output.Bugzilla
       ProductComboBox.SelectionChanged += ValidateData;
       ComponentComboBox.SelectionChanged += ValidateData;
       VersionComboBox.SelectionChanged += ValidateData;
+      OperatingSystemComboBox.SelectionChanged += ValidateData;
+      PlatformComboBox.SelectionChanged += ValidateData;
+      PriorityComboBox.SelectionChanged += ValidateData;
+      SeverityComboBox.SelectionChanged += ValidateData;
       SummaryTextBox.TextChanged += ValidateData;
       DescriptionTextBox.TextChanged += ValidateData;
       BugIDTextBox.TextChanged += ValidateData;
@@ -70,6 +74,26 @@ namespace BS.Output.Bugzilla
     public string Version
     {
       get { return (string)VersionComboBox.SelectedValue; }
+    }
+
+    public string OperatingSystem
+    {
+      get { return (string)OperatingSystemComboBox.SelectedValue; }
+    }
+
+    public string Platform
+    {
+      get { return (string)PlatformComboBox.SelectedValue; }
+    }
+
+    public string Priority
+    {
+      get { return (string)PriorityComboBox.SelectedValue; }
+    }
+
+    public string Severity
+    {
+      get { return (string)SeverityComboBox.SelectedValue; }
     }
 
     public string Summary
@@ -153,6 +177,10 @@ namespace BS.Output.Bugzilla
       OK.IsEnabled = ((CreateNewBug && Validation.IsValid(ProductComboBox) &&
                                        Validation.IsValid(ComponentComboBox) &&
                                        Validation.IsValid(VersionComboBox) &&
+                                       Validation.IsValid(OperatingSystemComboBox) &&
+                                       Validation.IsValid(PlatformComboBox) &&
+                                       Validation.IsValid(PriorityComboBox) &&
+                                       Validation.IsValid(SeverityComboBox) &&
                                        Validation.IsValid(SummaryTextBox) && 
                                        Validation.IsValid(DescriptionTextBox)) ||
                       (!CreateNewBug && Validation.IsValid(BugIDTextBox))) &&

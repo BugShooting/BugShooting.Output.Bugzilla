@@ -5,130 +5,109 @@ using System.Xml;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
 
 namespace BS.Output.Bugzilla
 {
-
-  XXXXXXXXXXXXX ist noch nicht fertig umgesetzt
-
+  
   /// <summary>
   /// BugzillaProxy uses Bugzilla 5.x REST API
   /// </summary>
   internal class BugzillaProxy
   {
     
-    static internal async Task<Dictionary<string, Product>> GetEditableProductsAsync(string apiUrl, string userName, string password)
-    {
-      return await Task.Factory.StartNew(() => GetEditableProducts(apiUrl, userName, password));
-    }
-
-    static private Dictionary<string, Product> GetEditableProducts(string apiUrl, string userName, string password)
+    static internal async Task<Dictionary<string, Product>> GetEditableProducts(string apiUrl, string userName, string password)
     {
 
-      string requestUri = GetRequestUri(apiUrl, "product");
+      string requestUrl = GetApiUrl(apiUrl, "product");
 
-      requestUri = AddParameter(requestUri, "login", userName);
-      requestUri = AddParameter(requestUri, "password", password);
-      requestUri = AddParameter(requestUri, "type", "enterable");
+      requestUrl = AddParameter(requestUrl, "login", userName);
+      requestUrl = AddParameter(requestUrl, "password", password);
+      requestUrl = AddParameter(requestUrl, "type", "enterable");
 
-      string requestResult = GetData(requestUri);
+      string requestResult = await GetData(requestUrl);
 
-      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Products));
-      using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(requestResult)))
+      Products productsResult = FromJson<Products>(requestResult);
+
+      Dictionary<string, Product> products = new Dictionary<string, Product>();
+      foreach (Product product in productsResult.Items)
       {
-
-        Dictionary<string, Product> products = new Dictionary<string, Product>();
-
-        foreach (Product product in ((Products)serializer.ReadObject(stream)).Items)
-        {
-          products.Add(product.Name, product);
-        }
-
-        return products;
+        products.Add(product.Name, product);
       }
 
+      return products;
+
     }
 
-    static internal async Task<BugCreateResult> BugCreateAsync(string apiUrl,
-                                                               string userName,
-                                                               string password,
-                                                               string product, 
-                                                               string component, 
-                                                               string version, 
-                                                               string summary, 
-                                                               string description)
+    static internal async Task<Fields> GetBugFields(string apiUrl, string userName, string password)
     {
-      return await Task.Factory.StartNew(() => BugCreate(apiUrl, userName, password, product, component, version, summary, description));
+
+      string requestUrl = GetApiUrl(apiUrl, "field/bug");
+
+      requestUrl = AddParameter(requestUrl, "login", userName);
+      requestUrl = AddParameter(requestUrl, "password", password);
+      requestUrl = AddParameter(requestUrl, "type", "enterable");
+
+      string requestResult = await GetData(requestUrl);
+
+      Fields fields = FromJson<Fields>(requestResult);
+      
+      return fields;
+
     }
 
-    static private BugCreateResult BugCreate(string apiUrl,
-                                             string userName,
-                                             string password,
-                                             string product,
-                                             string component,
-                                             string version,
-                                             string summary,
-                                             string description)
+
+    static internal async Task<BugCreateResult> BugCreate(string apiUrl,
+                                                          string userName,
+                                                          string password,
+                                                          string product, 
+                                                          string component, 
+                                                          string version,
+                                                          string operatingSystem ,
+                                                          string platform ,
+                                                          string priority,
+                                                          string severity,
+                                                          string summary, 
+                                                          string description)
     {
 
-      string requestUri = GetRequestUri(apiUrl, "bug");
+      string requestUrl = GetApiUrl(apiUrl, "bug");
 
-      requestUri = AddParameter(requestUri, "login", userName);
-      requestUri = AddParameter(requestUri, "password", password);
-
+      requestUrl = AddParameter(requestUrl, "login", userName);
+      requestUrl = AddParameter(requestUrl, "password", password);
+        
       string requestData = string.Format("{{\"product\":\"{0}\"," +
                                           "\"component\":\"{1}\"," +
                                           "\"version\":\"{2}\"," +
-                                          "\"op_sys\":\"XXXXXXXXXXXXXXXXXX\"," +
-                                          "\"platform\":\"XXXXXXXXXXXXXXXXXX\"," +
-                                          "\"priority\":\"XXXXXXXXXXXXXXXXXX\"," +
-                                          "\"severity\":\"XXXXXXXXXXXXXXXXXX\"," +
-                                          "\"summary\":\"{3}\"," +
-                                          "\"description\":\"{4}\"}}",
-                                          product, component,version,summary,description);
+                                          "\"op_sys\":\"{3}\"," +
+                                          "\"rep_platform\":\"{4}\"," +
+                                          "\"priority\":\"{5}\"," +
+                                          "\"severity\":\"{6}\"," +
+                                          "\"summary\":\"{7}\"," +
+                                          "\"description\":\"{8}\"}}",
+                                          product, component, version, operatingSystem, platform, priority, severity,  summary, description);
 
 
-      string requestResult = PostData(requestUri, requestData);
-
-      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Products));
-      using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(requestResult)))
-      {
-
-        //Dictionary<string, Product> products = new Dictionary<string, Product>();
-
-        //foreach (Product product in ((Products)serializer.ReadObject(stream)).Items)
-        //{
-        //  products.Add(product.Name, product);
-        //}
-
-        return null;
-      }
-       
+      string requestResult = await SendData(requestUrl, requestData);
+      
+      // TODO result auswerten
+      return null;
+      
     }
 
-    static internal async Task<BugAddAttachmentResult> BugAddAttachmentAsync(string apiUrl,
-                                                                             string userName,
-                                                                             string password,
-                                                                             Int32 bugID, 
-                                                                             string comment, 
-                                                                             Byte[] imageData,
-                                                                             string fullFileName,
-                                                                             string mimeType)
+    static internal async Task<BugAddAttachmentResult> BugAddAttachment(string apiUrl,
+                                                                        string userName,
+                                                                        string password,
+                                                                        Int32 bugID, 
+                                                                        string comment, 
+                                                                        Byte[] imageData,
+                                                                        string fullFileName,
+                                                                        string mimeType)
     {
-      return await Task.Factory.StartNew(() => BugAddAttachment(apiUrl, userName, password, bugID, comment, imageData, fullFileName, mimeType));
-    }
 
-    static private BugAddAttachmentResult BugAddAttachment(string apiUrl,
-                                                           string userName,
-                                                           string password,
-                                                           Int32 bugID,
-                                                           string comment,
-                                                           Byte[] imageData,
-                                                           string fullFileName,
-                                                           string mimeType)
-    {
+      // TODO Async korrekt verwenden
 
       XmlDocument doc = new XmlDocument();
       XmlNode node = default(XmlNode);
@@ -220,7 +199,7 @@ namespace BS.Output.Bugzilla
       }
 
     }
-
+    
     private static string GetResponseResult(string apiUrl, string requestString)
     {
 
@@ -286,7 +265,7 @@ namespace BS.Output.Bugzilla
 
     }
 
-    private static string GetRequestUri(string url, string method)
+    private static string GetApiUrl(string url, string method)
     {
 
       string apiUrl = url;
@@ -300,46 +279,58 @@ namespace BS.Output.Bugzilla
 
     }
 
-    private static string AddParameter(string requestUri, string parameter, string value)
+    private static T FromJson<T>(string jsonText)
     {
 
-      if (requestUri.Contains("?"))
-      {
-        requestUri += "&";
-      }
-      else
-      {
-        requestUri += "?";
-      }
+      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(T));
 
-      return requestUri + parameter + "=" + HttpUtility.UrlEncode(value);
+      using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(jsonText)))
+      {
+        return (T)serializer.ReadObject(stream);
+      }
 
     }
 
-    private static string GetData(string requestUri)
+    private static string AddParameter(string requestUrl, string parameter, string value)
     {
 
-      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUri);
+      if (requestUrl.Contains("?"))
+      {
+        requestUrl += "&";
+      }
+      else
+      {
+        requestUrl += "?";
+      }
+
+      return requestUrl + parameter + "=" + HttpUtility.UrlEncode(value);
+
+    }
+
+    private static async Task<string> GetData(string requestUrl)
+    {
+
+      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUrl);
       request.Method = "GET";
       request.Accept = "application/json";
       request.ContentType = "application/json";
 
-      using (WebResponse response = request.GetResponse())
+      using (WebResponse response = await request.GetResponseAsync())
       {
         using (Stream stream = response.GetResponseStream())
         {
           using (StreamReader reader = new StreamReader(stream))
           {
-            return reader.ReadToEnd();
+            return await reader.ReadToEndAsync();
           }
         }
       }
     }
 
-    private static string PostData(string requestUri, string data)
+    private static async Task<string> SendData(string requestUrl, string data)
     {
       
-      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUri);
+      HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(requestUrl);
       request.Method = "POST";
       request.Accept = "application/json";
       request.ContentType = "application/json";
@@ -353,13 +344,13 @@ namespace BS.Output.Bugzilla
         requestStream.Close();
       }
 
-      using (WebResponse response = request.GetResponse())
+      using (WebResponse response = await request.GetResponseAsync())
       {
         using (Stream stream = response.GetResponseStream())
         {
           using (StreamReader reader = new StreamReader(stream))
           {
-            return reader.ReadToEnd();
+            return await reader.ReadToEndAsync();
           }
         }
       }
@@ -368,44 +359,74 @@ namespace BS.Output.Bugzilla
 
   }
 
-  [System.Runtime.Serialization.DataContract()]
+  [DataContract()]
   internal class Products
   {
 
-    [System.Runtime.Serialization.DataMember(Name = "products")]
+    [DataMember(Name = "products")]
     public List<Product> Items { get; set; }
     
   }
 
-  [System.Runtime.Serialization.DataContract()]
+  [DataContract()]
+  internal class Fields
+  {
+
+    [DataMember(Name = "fields")]
+    public List<Field> Items { get; set; }
+
+  }
+
+  [DataContract()]
+  internal class Field
+  {
+
+    [DataMember(Name = "name")]
+    public string Name { get; set; }
+
+    [DataMember(Name = "values")]
+    public List<FieldValue> Values { get; set; }
+
+  }
+
+  [DataContract()]
+  internal class FieldValue
+  {
+
+    [DataMember(Name = "name")]
+    public string Name { get; set; }
+
+  }
+
+  [DataContract()]
   internal class Product
   {
 
-    [System.Runtime.Serialization.DataMember(Name = "name")]
+    [DataMember(Name = "name")]
     public string Name { get; set; }
 
-    [System.Runtime.Serialization.DataMember(Name = "components")]
+    [DataMember(Name = "components")]
     public List<Component> Components { get; set; }
 
-    [System.Runtime.Serialization.DataMember(Name = "versions")]
+    [DataMember(Name = "versions")]
     public List<Version> Versions { get; set; }
 
   }
 
-  [System.Runtime.Serialization.DataContract()]
+  [DataContract()]
   internal class Component
   {
 
-    [System.Runtime.Serialization.DataMember(Name = "name")]
+    [DataMember(Name = "name")]
     public string Name { get; set; }
 
   }
 
-  [System.Runtime.Serialization.DataContract()]
+  [DataContract()]
   internal class Version
   {
 
-    [System.Runtime.Serialization.DataMember(Name = "name")]
+    [DataMember(Name = "name")]
     public string Name { get; set; }
 
   }
