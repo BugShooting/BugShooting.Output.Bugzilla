@@ -16,6 +16,10 @@ namespace BS.Output.Bugzilla
                 string lastProduct, 
                 string lastComponent,
                 string lastVersion,
+                string lastOperatingSystem,
+                string lastPlatform,
+                string lastPriority,
+                string lastSeverity,
                 int lastBugID,
                 Dictionary<string, Product> products,
                 List<FieldValue> operatingSystemValues,
@@ -30,22 +34,30 @@ namespace BS.Output.Bugzilla
 
       this.products = products;
       
-      ProductComboBox.ItemsSource = new SortedList<string, Product>(products).Values;
-      OperatingSystemComboBox.ItemsSource = operatingSystemValues;
-      PlatformComboBox.ItemsSource = platformValues;
-      PriorityComboBox.ItemsSource = priorityValues;
-      SeverityComboBox.ItemsSource = severityValues;
-
       Url.Text = url;
       NewBug.IsChecked = true;
-      ProductComboBox.SelectedValue = lastProduct;
 
+      ProductComboBox.ItemsSource = new SortedList<string, Product>(products).Values;
+      ProductComboBox.SelectedValue = lastProduct;
+      
       if (ProductComboBox.SelectedValue != null)
       {
         ComponentComboBox.SelectedValue = lastComponent;
         VersionComboBox.SelectedValue = lastVersion;
       }
       
+      OperatingSystemComboBox.ItemsSource = operatingSystemValues;
+      OperatingSystemComboBox.SelectedValue = lastOperatingSystem;
+
+      PlatformComboBox.ItemsSource = platformValues;
+      PlatformComboBox.SelectedValue = lastPlatform;
+
+      PriorityComboBox.ItemsSource = priorityValues;
+      PriorityComboBox.SelectedValue = lastPriority;
+
+      SeverityComboBox.ItemsSource = severityValues;
+      SeverityComboBox.SelectedValue = lastSeverity;
+
       BugIDTextBox.Text = lastBugID.ToString();
       FileNameTextBox.Text = fileName;
 
@@ -161,7 +173,7 @@ namespace BS.Output.Bugzilla
     private void ProductComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
 
-      if (ProductComboBox.SelectedValue is null)
+      if (ProductComboBox.SelectedItem is null)
       {
         ComponentComboBox.ItemsSource = null;
         VersionComboBox.ItemsSource = null;
@@ -169,10 +181,12 @@ namespace BS.Output.Bugzilla
       else
       {
 
-        ComponentComboBox.ItemsSource = products[Product].Components;
+        string product = ((Product)ProductComboBox.SelectedItem).Name;
+
+        ComponentComboBox.ItemsSource = products[product].Components;
         ComponentComboBox.SelectedIndex = 0;
 
-        VersionComboBox.ItemsSource = products[Product].Versions;
+        VersionComboBox.ItemsSource = products[product].Versions;
         VersionComboBox.SelectedIndex = 0;
 
       }
