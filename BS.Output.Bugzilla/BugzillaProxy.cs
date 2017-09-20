@@ -17,6 +17,8 @@ namespace BS.Output.Bugzilla
   /// </summary>
   internal class BugzillaProxy
   {
+
+    // TODO handle api rest errors
     
     static internal async Task<Dictionary<string, Product>> GetEditableProducts(string apiUrl, string userName, string password)
     {
@@ -120,104 +122,30 @@ namespace BS.Output.Bugzilla
     static internal async Task<BugAddAttachmentResult> BugAddAttachment(string apiUrl,
                                                                         string userName,
                                                                         string password,
-                                                                        Int32 bugID, 
+                                                                        int bugID, 
                                                                         string comment, 
                                                                         Byte[] imageData,
                                                                         string fullFileName,
-                                                                        string mimeType)
+                                                                        string fileMimeType)
     {
 
-      // TODO Async korrekt verwenden
+      string requestUrl = GetApiUrl(apiUrl, String.Format("bug/{0}/attachment", bugID));
 
-      XmlDocument doc = new XmlDocument();
-      XmlNode node = default(XmlNode);
+      requestUrl = AddParameter(requestUrl, "login", userName);
+      requestUrl = AddParameter(requestUrl, "password", password);
 
-      doc.AppendChild(doc.CreateXmlDeclaration("1.0", string.Empty, string.Empty));
-
-      XmlNode methodCallNode = doc.AppendChild(doc.CreateElement("methodCall"));
-
-      node = methodCallNode.AppendChild(doc.CreateElement("methodName"));
-      node.InnerText = "Bug.add_attachment";
-
-      node = methodCallNode.AppendChild(doc.CreateElement("params"));
-      node = node.AppendChild(doc.CreateElement("param"));
-      node = node.AppendChild(doc.CreateElement("value"));
-
-      XmlNode structNode = node.AppendChild(doc.CreateElement("struct"));
-
-      XmlNode memberNode = default(XmlNode);
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "login";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = userName;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "password";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = password;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "ids";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("array"));
-      node = node.AppendChild(doc.CreateElement("data"));
-      node = node.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("i4"));
-      node.InnerText = bugID.ToString();
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "data";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("base64"));
-      node.InnerText = Convert.ToBase64String(imageData); ;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "file_name";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = fullFileName;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "summary";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = fullFileName;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "comment";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = comment;
-
-      memberNode = structNode.AppendChild(doc.CreateElement("member"));
-      node = memberNode.AppendChild(doc.CreateElement("name"));
-      node.InnerText = "content_type";
-      node = memberNode.AppendChild(doc.CreateElement("value"));
-      node = node.AppendChild(doc.CreateElement("string"));
-      node.InnerText = mimeType;
-
-      string responseResult = GetResponseResult(apiUrl, doc.OuterXml);
-
-      string faultMessage = null;
-      if (CheckFaultExist(responseResult, ref faultMessage))
-      {
-        return new BugAddAttachmentResult(false, faultMessage);
-      }
-      else
-      {
-        return new BugAddAttachmentResult(true, null);
-      }
-
+      string requestData = string.Format("{{\"ids\":[{0}]," +
+                                         "\"data\":\"{1}\"," +
+                                         "\"file_name\":\"{2}\"," +
+                                         "\"summary\":\"{3}\"," +
+                                         "\"content_type\":\"{4}\"," +
+                                         "\"comment\":\"{5}\"}}",
+                                         bugID, Convert.ToBase64String(imageData), fullFileName, fullFileName, fileMimeType, comment);
+      
+      string requestResult = await SendData(requestUrl, requestData);
+          
+      return new BugAddAttachmentResult(true, null);
+      
     }
     
     private static string GetResponseResult(string apiUrl, string requestString)

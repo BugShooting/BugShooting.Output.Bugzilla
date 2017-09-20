@@ -196,7 +196,7 @@ namespace BS.Output.Bugzilla
             return new V3.SendResult(V3.Result.Canceled);
           }
 
-          Int32 bugID = 1;
+          int bugID = 1;
           string product = null;
           string component = null;
           string version = null;
