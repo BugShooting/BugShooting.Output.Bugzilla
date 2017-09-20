@@ -41,20 +41,39 @@ namespace BS.Output.Bugzilla
 
     }
 
-    static internal async Task<Fields> GetBugFields(string apiUrl, string userName, string password)
+    static internal async Task<BugFieldValues> GetBugFields(string apiUrl)
     {
 
       string requestUrl = GetApiUrl(apiUrl, "field/bug");
-
-      requestUrl = AddParameter(requestUrl, "login", userName);
-      requestUrl = AddParameter(requestUrl, "password", password);
-      requestUrl = AddParameter(requestUrl, "type", "enterable");
-
       string requestResult = await GetData(requestUrl);
 
       Fields fields = FromJson<Fields>(requestResult);
-      
-      return fields;
+
+      List<FieldValue> operatingSystemValues = null;
+      List<FieldValue> platformValues = null;
+      List<FieldValue> priorityValues = null;
+      List<FieldValue> severityValues = null;
+
+      foreach (Field field in fields.Items)
+      {
+        switch (field.Name)
+        { 
+          case "op_sys":
+            operatingSystemValues = field.Values;
+            break;
+          case "rep_platform":
+            platformValues = field.Values;
+            break;
+          case "priority":
+            priorityValues = field.Values;
+            break;
+          case "bug_severity":
+            severityValues = field.Values;
+            break;
+        }
+      }
+
+      return new BugFieldValues(operatingSystemValues, platformValues, priorityValues, severityValues);
 
     }
 
@@ -91,9 +110,10 @@ namespace BS.Output.Bugzilla
 
 
       string requestResult = await SendData(requestUrl, requestData);
-      
-      // TODO result auswerten
-      return null;
+
+      BugID bugID = FromJson<BugID>(requestResult);
+
+      return new BugCreateResult(true, bugID.ID, null);
       
     }
 
@@ -414,6 +434,15 @@ namespace BS.Output.Bugzilla
   }
 
   [DataContract()]
+  internal class BugID
+  {
+
+    [DataMember(Name = "id")]
+    public int ID { get; set; }
+
+  }
+
+  [DataContract()]
   internal class Component
   {
 
@@ -431,6 +460,46 @@ namespace BS.Output.Bugzilla
 
   }
 
+  internal class BugFieldValues
+  {
+
+    List<FieldValue> operatingSystemValues;
+    List<FieldValue> platformValues;
+    List<FieldValue> priorityValues;
+    List<FieldValue> severityValues;
+
+    public BugFieldValues(List<FieldValue> operatingSystemValues,
+                          List<FieldValue> platformValues,
+                          List<FieldValue> priorityValues,
+                          List<FieldValue> severityValues)
+    {
+      this.operatingSystemValues = operatingSystemValues;
+      this.platformValues = platformValues;
+      this.priorityValues = priorityValues;
+      this.severityValues = severityValues;
+    }
+
+
+    public List<FieldValue> OperatingSystemValues
+    {
+      get { return operatingSystemValues; }
+    }
+
+    public List<FieldValue> PlatformValues
+    {
+      get { return platformValues; }
+    }
+
+    public List<FieldValue> PriorityValues
+    {
+      get { return priorityValues; }
+    }
+
+    public List<FieldValue> SeverityValues
+    { 
+      get { return severityValues; }
+    }
+  }
 
   internal class BugCreateResult
   {

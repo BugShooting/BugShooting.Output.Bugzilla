@@ -174,9 +174,7 @@ namespace BS.Output.Bugzilla
           }
 
           Dictionary<string, Product> products = await BugzillaProxy.GetEditableProducts(Output.Url, userName, password);
-
-          // TODO Fields verwenden
-          Fields fields = await BugzillaProxy.GetBugFields(Output.Url, userName, password);
+          BugFieldValues bugFieldValues = await BugzillaProxy.GetBugFields(Output.Url);
 
           // Show send window
           Send send = new Send(Output.Url,
@@ -185,6 +183,7 @@ namespace BS.Output.Bugzilla
                                Output.LastVersion,
                                Output.LastBugID,
                                products,
+                               bugFieldValues,
                                userName,
                                password,
                                fileName);
@@ -233,6 +232,8 @@ namespace BS.Output.Bugzilla
               return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
             }
 
+            bugID = createResult.BugID;
+
           }
           else
           {
@@ -248,7 +249,6 @@ namespace BS.Output.Bugzilla
           }
 
           string fullFileName = send.FileName + "." + V3.FileHelper.GetFileExtention(Output.FileFormat);
-
           string mimeType = V3.FileHelper.GetMimeType(Output.FileFormat);
           byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
 
