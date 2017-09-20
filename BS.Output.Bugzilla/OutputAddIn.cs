@@ -173,8 +173,29 @@ namespace BS.Output.Bugzilla
 
           }
 
-          Dictionary<string, Product> products = await BugzillaProxy.GetEditableProducts(Output.Url, userName, password);
-          BugFieldValues bugFieldValues = await BugzillaProxy.GetBugFields(Output.Url);
+          GetProductsResult productsResult = await BugzillaProxy.GetEditableProducts(Output.Url, userName, password);
+          switch (productsResult.Status)
+          {
+            case ResultStatus.Success:
+              break;
+            case ResultStatus.LoginFailed:
+              showLogin = true;
+              continue;
+            case ResultStatus.Failed:
+              return new V3.SendResult(V3.Result.Failed, productsResult.FailedMessage);
+          }
+
+          GetBugFieldsResult bugFieldsResult = await BugzillaProxy.GetBugFields(Output.Url, userName, password);
+          switch (bugFieldsResult.Status)
+          {
+            case ResultStatus.Success:
+              break;
+            case ResultStatus.LoginFailed:
+              showLogin = true;
+              continue;
+            case ResultStatus.Failed:
+              return new V3.SendResult(V3.Result.Failed, bugFieldsResult.FailedMessage);
+          }
 
           // Show send window
           Send send = new Send(Output.Url,
@@ -182,8 +203,11 @@ namespace BS.Output.Bugzilla
                                Output.LastComponent,
                                Output.LastVersion,
                                Output.LastBugID,
-                               products,
-                               bugFieldValues,
+                               productsResult.Products,
+                               bugFieldsResult.OperatingSystemValues,
+                               bugFieldsResult.PlatformValues,
+                               bugFieldsResult.PriorityValues,
+                               bugFieldsResult.SeverityValues,
                                userName,
                                password,
                                fileName);
@@ -227,13 +251,18 @@ namespace BS.Output.Bugzilla
                                                                          severity,
                                                                          send.Summary,
                                                                          send.Description);
-            if (!createResult.Success)
+            switch (createResult.Status)
             {
-              return new V3.SendResult(V3.Result.Failed, createResult.FaultMessage);
+              case ResultStatus.Success:
+                bugID = createResult.BugID;
+                break;
+              case ResultStatus.LoginFailed:
+                showLogin = true;
+                continue;
+              case ResultStatus.Failed:
+                return new V3.SendResult(V3.Result.Failed, createResult.FailedMessage);
             }
-
-            bugID = createResult.BugID;
-
+          
           }
           else
           {
@@ -254,11 +283,17 @@ namespace BS.Output.Bugzilla
 
 
           BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachment(Output.Url, userName, password, bugID, send.Comment, fileBytes, fullFileName, mimeType);
-
-          if (!attachResult.Success)
+          switch (attachResult.Status)
           {
-            return new V3.SendResult(V3.Result.Failed, attachResult.FaultMessage);
+            case ResultStatus.Success:
+              break;
+            case ResultStatus.LoginFailed:
+              showLogin = true;
+              continue;
+            case ResultStatus.Failed:
+              return new V3.SendResult(V3.Result.Failed, attachResult.FailedMessage);
           }
+
 
 
           // Open bug in browser

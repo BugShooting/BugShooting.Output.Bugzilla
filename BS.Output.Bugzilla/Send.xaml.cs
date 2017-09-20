@@ -18,7 +18,10 @@ namespace BS.Output.Bugzilla
                 string lastVersion,
                 int lastBugID,
                 Dictionary<string, Product> products,
-                BugFieldValues bugFieldValues,
+                List<FieldValue> operatingSystemValues,
+                List<FieldValue> platformValues,
+                List<FieldValue> priorityValues,
+                List<FieldValue> severityValues,
                 string userName, 
                 string password, 
                 string fileName)
@@ -28,10 +31,10 @@ namespace BS.Output.Bugzilla
       this.products = products;
       
       ProductComboBox.ItemsSource = new SortedList<string, Product>(products).Values;
-      OperatingSystemComboBox.ItemsSource = bugFieldValues.OperatingSystemValues;
-      PlatformComboBox.ItemsSource = bugFieldValues.PlatformValues;
-      PriorityComboBox.ItemsSource = bugFieldValues.PriorityValues;
-      SeverityComboBox.ItemsSource = bugFieldValues.SeverityValues;
+      OperatingSystemComboBox.ItemsSource = operatingSystemValues;
+      PlatformComboBox.ItemsSource = platformValues;
+      PriorityComboBox.ItemsSource = priorityValues;
+      SeverityComboBox.ItemsSource = severityValues;
 
       Url.Text = url;
       NewBug.IsChecked = true;

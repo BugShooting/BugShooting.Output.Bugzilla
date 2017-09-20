@@ -17,68 +17,115 @@ namespace BS.Output.Bugzilla
   /// </summary>
   internal class BugzillaProxy
   {
-
-    // TODO handle api rest errors
-    
-    static internal async Task<Dictionary<string, Product>> GetEditableProducts(string apiUrl, string userName, string password)
+       
+    static internal async Task<GetProductsResult> GetEditableProducts(string apiUrl, string userName, string password)
     {
 
-      string requestUrl = GetApiUrl(apiUrl, "product");
-
-      requestUrl = AddParameter(requestUrl, "login", userName);
-      requestUrl = AddParameter(requestUrl, "password", password);
-      requestUrl = AddParameter(requestUrl, "type", "enterable");
-
-      string requestResult = await GetData(requestUrl);
-
-      Products productsResult = FromJson<Products>(requestResult);
-
-      Dictionary<string, Product> products = new Dictionary<string, Product>();
-      foreach (Product product in productsResult.Items)
+      try
       {
-        products.Add(product.Name, product);
-      }
 
-      return products;
+        string requestUrl = GetApiUrl(apiUrl, "product");
 
-    }
+        requestUrl = AddParameter(requestUrl, "login", userName);
+        requestUrl = AddParameter(requestUrl, "password", password);
+        requestUrl = AddParameter(requestUrl, "type", "enterable");
 
-    static internal async Task<BugFieldValues> GetBugFields(string apiUrl)
-    {
+        string requestResult = await GetData(requestUrl);
 
-      string requestUrl = GetApiUrl(apiUrl, "field/bug");
-      string requestResult = await GetData(requestUrl);
+        Products productsResult = FromJson<Products>(requestResult);
 
-      Fields fields = FromJson<Fields>(requestResult);
-
-      List<FieldValue> operatingSystemValues = null;
-      List<FieldValue> platformValues = null;
-      List<FieldValue> priorityValues = null;
-      List<FieldValue> severityValues = null;
-
-      foreach (Field field in fields.Items)
-      {
-        switch (field.Name)
-        { 
-          case "op_sys":
-            operatingSystemValues = field.Values;
-            break;
-          case "rep_platform":
-            platformValues = field.Values;
-            break;
-          case "priority":
-            priorityValues = field.Values;
-            break;
-          case "bug_severity":
-            severityValues = field.Values;
-            break;
+        Dictionary<string, Product> products = new Dictionary<string, Product>();
+        foreach (Product product in productsResult.Items)
+        {
+          products.Add(product.Name, product);
         }
-      }
 
-      return new BugFieldValues(operatingSystemValues, platformValues, priorityValues, severityValues);
+        return new GetProductsResult(ResultStatus.Success, products, null);
+
+      }
+      catch (WebException ex) when (ex.Response is HttpWebResponse)
+      {
+
+        using (HttpWebResponse response = (HttpWebResponse)ex.Response)
+        {
+
+          switch (response.StatusCode)
+          {
+            case HttpStatusCode.Unauthorized:
+              return new GetProductsResult(ResultStatus.LoginFailed, null, null);
+              
+            default:
+              return new GetProductsResult(ResultStatus.Failed, null, response.StatusDescription);
+          }
+
+        }
+
+      }
 
     }
 
+    static internal async Task<GetBugFieldsResult> GetBugFields(string apiUrl, string userName, string password)
+    {
+
+      try
+      {
+
+        string requestUrl = GetApiUrl(apiUrl, "field/bug");
+
+        requestUrl = AddParameter(requestUrl, "login", userName);
+        requestUrl = AddParameter(requestUrl, "password", password);
+
+        string requestResult = await GetData(requestUrl);
+
+        Fields fields = FromJson<Fields>(requestResult);
+
+        List<FieldValue> operatingSystemValues = null;
+        List<FieldValue> platformValues = null;
+        List<FieldValue> priorityValues = null;
+        List<FieldValue> severityValues = null;
+
+        foreach (Field field in fields.Items)
+        {
+          switch (field.Name)
+          { 
+            case "op_sys":
+              operatingSystemValues = field.Values;
+              break;
+            case "rep_platform":
+              platformValues = field.Values;
+              break;
+            case "priority":
+              priorityValues = field.Values;
+              break;
+            case "bug_severity":
+              severityValues = field.Values;
+              break;
+          }
+        }
+
+        return new GetBugFieldsResult(ResultStatus.Success, operatingSystemValues, platformValues, priorityValues, severityValues, null);
+
+      }
+      catch (WebException ex) when (ex.Response is HttpWebResponse)
+      {
+
+        using (HttpWebResponse response = (HttpWebResponse)ex.Response)
+        {
+
+          switch (response.StatusCode)
+          {
+            case HttpStatusCode.Unauthorized:
+              return new GetBugFieldsResult(ResultStatus.LoginFailed, null, null, null, null, null);
+
+            default:
+              return new GetBugFieldsResult(ResultStatus.Failed, null, null, null, null, response.StatusDescription);
+          }
+
+        }
+
+      }
+
+    }
 
     static internal async Task<BugCreateResult> BugCreate(string apiUrl,
                                                           string userName,
@@ -94,29 +141,52 @@ namespace BS.Output.Bugzilla
                                                           string description)
     {
 
-      string requestUrl = GetApiUrl(apiUrl, "bug");
+      try
+      {
 
-      requestUrl = AddParameter(requestUrl, "login", userName);
-      requestUrl = AddParameter(requestUrl, "password", password);
+        string requestUrl = GetApiUrl(apiUrl, "bug");
+
+        requestUrl = AddParameter(requestUrl, "login", userName);
+        requestUrl = AddParameter(requestUrl, "password", password);
         
-      string requestData = string.Format("{{\"product\":\"{0}\"," +
-                                          "\"component\":\"{1}\"," +
-                                          "\"version\":\"{2}\"," +
-                                          "\"op_sys\":\"{3}\"," +
-                                          "\"rep_platform\":\"{4}\"," +
-                                          "\"priority\":\"{5}\"," +
-                                          "\"severity\":\"{6}\"," +
-                                          "\"summary\":\"{7}\"," +
-                                          "\"description\":\"{8}\"}}",
-                                          product, component, version, operatingSystem, platform, priority, severity,  summary, description);
+        string requestData = string.Format("{{\"product\":\"{0}\"," +
+                                            "\"component\":\"{1}\"," +
+                                            "\"version\":\"{2}\"," +
+                                            "\"op_sys\":\"{3}\"," +
+                                            "\"rep_platform\":\"{4}\"," +
+                                            "\"priority\":\"{5}\"," +
+                                            "\"severity\":\"{6}\"," +
+                                            "\"summary\":\"{7}\"," +
+                                            "\"description\":\"{8}\"}}",
+                                            product, component, version, operatingSystem, platform, priority, severity,  summary, description);
 
 
-      string requestResult = await SendData(requestUrl, requestData);
+        string requestResult = await SendData(requestUrl, requestData);
 
-      BugID bugID = FromJson<BugID>(requestResult);
+        BugID bugID = FromJson<BugID>(requestResult);
 
-      return new BugCreateResult(true, bugID.ID, null);
-      
+        return new BugCreateResult(ResultStatus.Success, bugID.ID, null);
+
+      }
+      catch (WebException ex) when (ex.Response is HttpWebResponse)
+      {
+
+        using (HttpWebResponse response = (HttpWebResponse)ex.Response)
+        {
+
+          switch (response.StatusCode)
+          {
+            case HttpStatusCode.Unauthorized:
+              return new BugCreateResult(ResultStatus.LoginFailed, 0, null);
+
+            default:
+              return new BugCreateResult(ResultStatus.Failed, 0, response.StatusDescription);
+          }
+
+        }
+
+      }
+
     }
 
     static internal async Task<BugAddAttachmentResult> BugAddAttachment(string apiUrl,
@@ -129,23 +199,48 @@ namespace BS.Output.Bugzilla
                                                                         string fileMimeType)
     {
 
-      string requestUrl = GetApiUrl(apiUrl, String.Format("bug/{0}/attachment", bugID));
+      try
+      {
 
-      requestUrl = AddParameter(requestUrl, "login", userName);
-      requestUrl = AddParameter(requestUrl, "password", password);
+        string requestUrl = GetApiUrl(apiUrl, String.Format("bug/{0}/attachment", bugID));
 
-      string requestData = string.Format("{{\"ids\":[{0}]," +
-                                         "\"data\":\"{1}\"," +
-                                         "\"file_name\":\"{2}\"," +
-                                         "\"summary\":\"{3}\"," +
-                                         "\"content_type\":\"{4}\"," +
-                                         "\"comment\":\"{5}\"}}",
-                                         bugID, Convert.ToBase64String(imageData), fullFileName, fullFileName, fileMimeType, comment);
+        requestUrl = AddParameter(requestUrl, "login", userName);
+        requestUrl = AddParameter(requestUrl, "password", password);
+
+        string requestData = string.Format("{{\"ids\":[{0}]," +
+                                           "\"data\":\"{1}\"," +
+                                           "\"file_name\":\"{2}\"," +
+                                           "\"summary\":\"{3}\"," +
+                                           "\"content_type\":\"{4}\"," +
+                                           "\"comment\":\"{5}\"}}",
+                                           bugID, Convert.ToBase64String(imageData), fullFileName, fullFileName, fileMimeType, comment);
       
-      string requestResult = await SendData(requestUrl, requestData);
+        string requestResult = await SendData(requestUrl, requestData);
           
-      return new BugAddAttachmentResult(true, null);
-      
+        return new BugAddAttachmentResult(ResultStatus.Success, null);
+
+      }
+      catch (WebException ex) when (ex.Response is HttpWebResponse)
+      {
+
+        using (HttpWebResponse response = (HttpWebResponse)ex.Response)
+        {
+
+          switch (response.StatusCode)
+          {
+            case HttpStatusCode.Unauthorized:
+              return new BugAddAttachmentResult(ResultStatus.LoginFailed, null);
+
+            case HttpStatusCode.NotFound:
+              return new BugAddAttachmentResult(ResultStatus.Failed, FromJson<Error>(response).GetMessage());
+
+            default:
+              return new BugAddAttachmentResult(ResultStatus.Failed, response.StatusDescription);
+          }
+
+        }
+
+      }
     }
     
     private static string GetResponseResult(string apiUrl, string requestString)
@@ -235,6 +330,28 @@ namespace BS.Output.Bugzilla
       using (MemoryStream stream = new MemoryStream(Encoding.Unicode.GetBytes(jsonText)))
       {
         return (T)serializer.ReadObject(stream);
+      }
+
+    }
+
+    private static T FromJson<T>(WebResponse response)
+    {
+
+      string responseContent = null;
+
+      using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+      {
+        responseContent = reader.ReadToEnd();
+      }
+
+      DataContractJsonSerializerSettings serializerSettings = new DataContractJsonSerializerSettings();
+      serializerSettings.UseSimpleDictionaryFormat = true;
+
+      DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(T), serializerSettings);
+
+      using (MemoryStream memoryStream = new MemoryStream(Encoding.Unicode.GetBytes(responseContent)))
+      {
+        return (T)serializer.ReadObject(memoryStream);
       }
 
     }
@@ -388,25 +505,96 @@ namespace BS.Output.Bugzilla
 
   }
 
-  internal class BugFieldValues
+  [DataContract()]
+  internal class Error
   {
 
+    [DataMember(Name = "message")]
+    public string Message { get; set; }
+
+    [DataMember(Name = "code")]
+    public string Code { get; set; }
+
+    public string GetMessage()
+    {
+      return String.Format("{0} (Code {1})", Message, Code);
+    }
+
+  }
+
+  internal enum ResultStatus : int
+  {
+    Success = 1,
+    LoginFailed = 2,
+    Failed = 3
+  }
+
+  internal class GetProductsResult
+  {
+
+    ResultStatus status;
+    string failedMessage;
+    Dictionary<string, Product> products;
+
+    public GetProductsResult(ResultStatus status,
+                             Dictionary<string, Product> products,
+                             string failedMessage)
+    {
+      this.status = status;
+      this.products = products;
+      this.failedMessage = failedMessage;
+    }
+
+    public ResultStatus Status
+    {
+      get { return status; }
+    }
+
+    public Dictionary<string, Product> Products
+    {
+      get { return products; }
+    }
+    public string FailedMessage
+    {
+      get { return failedMessage; }
+    }
+
+  }
+
+  internal class GetBugFieldsResult
+  {
+
+    ResultStatus status;
     List<FieldValue> operatingSystemValues;
     List<FieldValue> platformValues;
     List<FieldValue> priorityValues;
     List<FieldValue> severityValues;
+    string failedMessage;
 
-    public BugFieldValues(List<FieldValue> operatingSystemValues,
-                          List<FieldValue> platformValues,
-                          List<FieldValue> priorityValues,
-                          List<FieldValue> severityValues)
+    public GetBugFieldsResult(ResultStatus status,
+                              List<FieldValue> operatingSystemValues,
+                              List<FieldValue> platformValues,
+                              List<FieldValue> priorityValues,
+                              List<FieldValue> severityValues,
+                              string failedMessage)
     {
+      this.status = status;
       this.operatingSystemValues = operatingSystemValues;
       this.platformValues = platformValues;
       this.priorityValues = priorityValues;
       this.severityValues = severityValues;
+      this.failedMessage = failedMessage;
     }
 
+    public ResultStatus Status
+    {
+      get { return status; }
+    }
+
+    public string FailedMessage
+    {
+      get { return failedMessage; }
+    }
 
     public List<FieldValue> OperatingSystemValues
     {
@@ -424,7 +612,7 @@ namespace BS.Output.Bugzilla
     }
 
     public List<FieldValue> SeverityValues
-    { 
+    {
       get { return severityValues; }
     }
   }
@@ -432,23 +620,23 @@ namespace BS.Output.Bugzilla
   internal class BugCreateResult
   {
 
-    bool success;
+    ResultStatus status;
     int bugID;
-    string faultMessage;
+    string failedMessage;
 
-    public BugCreateResult(bool success,
+    public BugCreateResult(ResultStatus status,
                            int bugID, 
-                           string faultMessage)
+                           string failedMessage)
     {
-      this.success = success;
+      this.status = status;
       this.bugID = bugID;
-      this.faultMessage = faultMessage;
+      this.failedMessage = failedMessage;
     }
 
 
-    public bool Success
+    public ResultStatus Status
     {
-      get { return success; }
+      get { return status; }
     }
 
     public int BugID
@@ -456,9 +644,9 @@ namespace BS.Output.Bugzilla
       get { return bugID; }
     }
 
-    public string FaultMessage
+    public string FailedMessage
     {
-      get { return faultMessage; }
+      get { return failedMessage; }
     }
 
   }
@@ -466,25 +654,25 @@ namespace BS.Output.Bugzilla
   internal class BugAddAttachmentResult
   {
 
-    bool success;
-    string faultMessage;
+    ResultStatus status;
+    string failedMessage;
 
-    public BugAddAttachmentResult(bool success,
-                           string faultMessage)
+    public BugAddAttachmentResult(ResultStatus status,
+                                  string failedMessage)
     {
-      this.success = success;
-      this.faultMessage = faultMessage;
+      this.status = status;
+      this.failedMessage = failedMessage;
     }
 
 
-    public bool Success
+    public ResultStatus Status
     {
-      get { return success; }
+      get { return status; }
     }
 
-    public string FaultMessage
+    public string FailedMessage
     {
-      get { return faultMessage; }
+      get { return failedMessage; }
     }
 
   }
