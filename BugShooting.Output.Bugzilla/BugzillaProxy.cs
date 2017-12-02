@@ -9,7 +9,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
 
-namespace BS.Output.Bugzilla
+namespace BugShooting.Output.Bugzilla
 {
   
   /// <summary>

@@ -1,4 +1,6 @@
-﻿namespace BS.Output.Bugzilla
+﻿using BS.Plugin.V3.Output;
+
+namespace BugShooting.Output.Bugzilla
 {
 
   public class Output: IOutput 

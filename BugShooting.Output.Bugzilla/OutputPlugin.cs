@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BS.Plugin.V3.Common;
+using BS.Plugin.V3.Output;
+using BS.Plugin.V3.Utilities;
+using System;
 using System.Drawing;
-using System.Windows.Forms;
 using System.Threading.Tasks;
-using System.Net;
+using System.Windows.Forms;
 
-namespace BS.Output.Bugzilla
+namespace BugShooting.Output.Bugzilla
 {
-  public class OutputAddIn: V3.OutputAddIn<Output>
+  public class OutputPlugin: OutputPlugin<Output>
   {
 
     protected override string Name
@@ -91,53 +92,53 @@ namespace BS.Output.Bugzilla
 
     }
 
-    protected override OutputValueCollection SerializeOutput(Output Output)
+    protected override OutputValues SerializeOutput(Output Output)
     {
 
-      OutputValueCollection outputValues = new OutputValueCollection();
+      OutputValues outputValues = new OutputValues();
 
-      outputValues.Add(new OutputValue("Name", Output.Name));
-      outputValues.Add(new OutputValue("Url", Output.Url));
-      outputValues.Add(new OutputValue("UserName", Output.UserName));
-      outputValues.Add(new OutputValue("Password",Output.Password, true));
-      outputValues.Add(new OutputValue("OpenItemInBrowser", Convert.ToString(Output.OpenItemInBrowser)));
-      outputValues.Add(new OutputValue("FileName", Output.FileName));
-      outputValues.Add(new OutputValue("FileFormat", Output.FileFormat));
-      outputValues.Add(new OutputValue("LastProduct", Output.LastProduct));
-      outputValues.Add(new OutputValue("LastComponent", Output.LastComponent));
-      outputValues.Add(new OutputValue("LastVersion", Output.LastVersion));
-      outputValues.Add(new OutputValue("LastOperatingSystem", Output.LastOperatingSystem));
-      outputValues.Add(new OutputValue("LastPlatform", Output.LastPlatform));
-      outputValues.Add(new OutputValue("LastPriority", Output.LastPriority));
-      outputValues.Add(new OutputValue("LastSeverity", Output.LastSeverity));
-      outputValues.Add(new OutputValue("LastBugID", Convert.ToString(Output.LastBugID)));
+      outputValues.Add("Name", Output.Name);
+      outputValues.Add("Url", Output.Url);
+      outputValues.Add("UserName", Output.UserName);
+      outputValues.Add("Password",Output.Password, true);
+      outputValues.Add("OpenItemInBrowser", Convert.ToString(Output.OpenItemInBrowser));
+      outputValues.Add("FileName", Output.FileName);
+      outputValues.Add("FileFormat", Output.FileFormat);
+      outputValues.Add("LastProduct", Output.LastProduct);
+      outputValues.Add("LastComponent", Output.LastComponent);
+      outputValues.Add("LastVersion", Output.LastVersion);
+      outputValues.Add("LastOperatingSystem", Output.LastOperatingSystem);
+      outputValues.Add("LastPlatform", Output.LastPlatform);
+      outputValues.Add("LastPriority", Output.LastPriority);
+      outputValues.Add("LastSeverity", Output.LastSeverity);
+      outputValues.Add("LastBugID", Convert.ToString(Output.LastBugID));
 
       return outputValues;
       
     }
 
-    protected override Output DeserializeOutput(OutputValueCollection OutputValues)
+    protected override Output DeserializeOutput(OutputValues OutputValues)
     {
 
-      return new Output(OutputValues["Name", this.Name].Value,
-                        OutputValues["Url", ""].Value, 
-                        OutputValues["UserName", ""].Value,
-                        OutputValues["Password", ""].Value, 
-                        OutputValues["FileName", "Screenshot"].Value, 
-                        OutputValues["FileFormat", ""].Value,
-                        Convert.ToBoolean(OutputValues["OpenItemInBrowser", Convert.ToString(true)].Value),
-                        OutputValues["LastProduct", string.Empty].Value,
-                        OutputValues["LastComponent", string.Empty].Value,
-                        OutputValues["LastVersion", string.Empty].Value,
-                        OutputValues["LastOperatingSystem", string.Empty].Value,
-                        OutputValues["LastPlatform", string.Empty].Value,
-                        OutputValues["LastPriority", string.Empty].Value,
-                        OutputValues["LastSeverity", string.Empty].Value,
-                        Convert.ToInt32(OutputValues["LastBugID", "1"].Value));
+      return new Output(OutputValues["Name", this.Name],
+                        OutputValues["Url", ""], 
+                        OutputValues["UserName", ""],
+                        OutputValues["Password", ""], 
+                        OutputValues["FileName", "Screenshot"], 
+                        OutputValues["FileFormat", ""],
+                        Convert.ToBoolean(OutputValues["OpenItemInBrowser", Convert.ToString(true)]),
+                        OutputValues["LastProduct", string.Empty],
+                        OutputValues["LastComponent", string.Empty],
+                        OutputValues["LastVersion", string.Empty],
+                        OutputValues["LastOperatingSystem", string.Empty],
+                        OutputValues["LastPlatform", string.Empty],
+                        OutputValues["LastPriority", string.Empty],
+                        OutputValues["LastSeverity", string.Empty],
+                        Convert.ToInt32(OutputValues["LastBugID", "1"]));
 
     }
 
-    protected override async Task<V3.SendResult> Send(IWin32Window Owner, Output Output, V3.ImageData ImageData)
+    protected override async Task<SendResult> Send(IWin32Window Owner, Output Output, ImageData ImageData)
     {
 
       try
@@ -148,7 +149,7 @@ namespace BS.Output.Bugzilla
         bool showLogin = string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password);
         bool rememberCredentials = false;
 
-        string fileName = V3.FileHelper.GetFileName(Output.FileName, Output.FileFormat, ImageData);
+        string fileName = FileHelper.GetFileName(Output.FileName, ImageData);
 
         while (true)
         {
@@ -164,7 +165,7 @@ namespace BS.Output.Bugzilla
 
             if (credentials.ShowDialog() != true)
             {
-              return new V3.SendResult(V3.Result.Canceled);
+              return new SendResult(Result.Canceled);
             }
 
             userName = credentials.UserName;
@@ -182,7 +183,7 @@ namespace BS.Output.Bugzilla
               showLogin = true;
               continue;
             case ResultStatus.Failed:
-              return new V3.SendResult(V3.Result.Failed, productsResult.FailedMessage);
+              return new SendResult(Result.Failed, productsResult.FailedMessage);
           }
 
           GetBugFieldsResult bugFieldsResult = await BugzillaProxy.GetBugFields(Output.Url, userName, password);
@@ -194,7 +195,7 @@ namespace BS.Output.Bugzilla
               showLogin = true;
               continue;
             case ResultStatus.Failed:
-              return new V3.SendResult(V3.Result.Failed, bugFieldsResult.FailedMessage);
+              return new SendResult(Result.Failed, bugFieldsResult.FailedMessage);
           }
 
           // Show send window
@@ -221,7 +222,7 @@ namespace BS.Output.Bugzilla
 
           if (!send.ShowDialog() == true)
           {
-            return new V3.SendResult(V3.Result.Canceled);
+            return new SendResult(Result.Canceled);
           }
 
           int bugID = 1;
@@ -264,7 +265,7 @@ namespace BS.Output.Bugzilla
                 showLogin = true;
                 continue;
               case ResultStatus.Failed:
-                return new V3.SendResult(V3.Result.Failed, createResult.FailedMessage);
+                return new SendResult(Result.Failed, createResult.FailedMessage);
             }
           
           }
@@ -281,9 +282,9 @@ namespace BS.Output.Bugzilla
 
           }
 
-          string fullFileName = send.FileName + "." + V3.FileHelper.GetFileExtention(Output.FileFormat);
-          string mimeType = V3.FileHelper.GetMimeType(Output.FileFormat);
-          byte[] fileBytes = V3.FileHelper.GetFileBytes(Output.FileFormat, ImageData);
+          string fullFileName = send.FileName + "." + FileHelper.GetFileExtention(Output.FileFormat);
+          string mimeType = FileHelper.GetMimeType(Output.FileFormat);
+          byte[] fileBytes = FileHelper.GetFileBytes(Output.FileFormat, ImageData);
 
 
           BugAddAttachmentResult attachResult = await BugzillaProxy.BugAddAttachment(Output.Url, userName, password, bugID, send.Comment, fileBytes, fullFileName, mimeType);
@@ -295,7 +296,7 @@ namespace BS.Output.Bugzilla
               showLogin = true;
               continue;
             case ResultStatus.Failed:
-              return new V3.SendResult(V3.Result.Failed, attachResult.FailedMessage);
+              return new SendResult(Result.Failed, attachResult.FailedMessage);
           }
 
 
@@ -303,32 +304,32 @@ namespace BS.Output.Bugzilla
           // Open bug in browser
           if (Output.OpenItemInBrowser)
           {
-            V3.WebHelper.OpenUrl(Output.Url + "/show_bug.cgi?id=" + Convert.ToString(bugID));
+            WebHelper.OpenUrl(Output.Url + "/show_bug.cgi?id=" + Convert.ToString(bugID));
           }
 
-          return new V3.SendResult(V3.Result.Success,
-                                   new Output(Output.Name,
-                                              Output.Url,
-                                              (rememberCredentials) ? userName : Output.UserName,
-                                              (rememberCredentials) ? password : Output.Password,
-                                              Output.FileName,
-                                              Output.FileFormat,
-                                              Output.OpenItemInBrowser,
-                                              product,
-                                              component,
-                                              version,
-                                              operatingSystem,
-                                              platform,
-                                              priority,
-                                              severity,
-                                              bugID));
+          return new SendResult(Result.Success,
+                                new Output(Output.Name,
+                                          Output.Url,
+                                          (rememberCredentials) ? userName : Output.UserName,
+                                          (rememberCredentials) ? password : Output.Password,
+                                          Output.FileName,
+                                          Output.FileFormat,
+                                          Output.OpenItemInBrowser,
+                                          product,
+                                          component,
+                                          version,
+                                          operatingSystem,
+                                          platform,
+                                          priority,
+                                          severity,
+                                          bugID));
 
         }
         
       }
       catch (Exception ex)
       {
-        return new V3.SendResult(V3.Result.Failed, ex.Message);
+        return new SendResult(Result.Failed, ex.Message);
       }
 
     }

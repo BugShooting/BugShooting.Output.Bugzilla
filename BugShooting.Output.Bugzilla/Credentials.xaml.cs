@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace BS.Output.Bugzilla
+namespace BugShooting.Output.Bugzilla
 {
   partial class Credentials : Window
   {
