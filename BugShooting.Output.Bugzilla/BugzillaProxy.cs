@@ -242,72 +242,7 @@ namespace BugShooting.Output.Bugzilla
 
       }
     }
-    
-    private static string GetResponseResult(string apiUrl, string requestString)
-    {
-
-      byte[] requestData = System.Text.Encoding.ASCII.GetBytes(requestString);
-
-      HttpWebRequest request = (HttpWebRequest)WebRequest.Create(apiUrl);
-
-      request.Method = "POST";
-      request.ContentType = "text/xml";
-      request.ContentLength = requestData.Length;
-
-      using (Stream requestStream = request.GetRequestStream())
-      {
-
-        requestStream.Write(requestData, 0, requestData.Length);
-
-        using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-        {
-          using (Stream stream = response.GetResponseStream())
-          {
-            using (StreamReader reader = new StreamReader(stream))
-            {
-              return reader.ReadToEnd();
-            }
-          }
-        }
-
-      }
-      
-    }
-
-    private static bool CheckFaultExist(string responseString, ref string faultMessage)
-    {
-
-      XmlDocument doc = new XmlDocument();
-      doc.LoadXml(responseString);
-      
-      if (doc.GetElementsByTagName("fault").Count > 0)
-      {
-        foreach (XmlNode memberNode in doc.GetElementsByTagName("member"))
-        {
-          foreach (XmlNode memberName in memberNode.ChildNodes)
-          {
-
-            if (memberName.Name.ToLower() == "name" && memberName.InnerText.ToLower() == "faultstring")
-            {
-              foreach (XmlNode memberValue in memberNode.ChildNodes)
-              {
-                if (memberValue.Name.ToLower() == "value")
-                {
-                  faultMessage = memberValue.ChildNodes[0].InnerText;
-                  return true;
-                }
-              }
-
-            }
-          }
-        }
-
-      }
-
-      return false;
-
-    }
-
+ 
     private static string GetApiUrl(string url, string method)
     {
 
